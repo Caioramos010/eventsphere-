@@ -25,10 +25,14 @@ public interface ParticipantRepository extends JpaRepository<EventParticipant, L
     Long countPresent(@Param("eventId") Long eventId);
 
     @Query("SELECT COUNT(h) FROM ParticipantHistory h WHERE h.participant.event.id = :eventId AND h.status = 'INVITED'")
-    Long countInvited(@Param("eventId") Long eventId);
-
-    @Query("SELECT p FROM ParticipantHistory h JOIN h.participant p " + "WHERE p.event.id = :eventId AND h.status = :status")
+    Long countInvited(@Param("eventId") Long eventId);    @Query("SELECT p FROM ParticipantHistory h JOIN h.participant p " + "WHERE p.event.id = :eventId AND h.status = :status")
     List<EventParticipant> findParticipantsByStatusInHistory(@Param("eventId") Long eventId, @Param("status") ParticipantStatus status);
+
+    @Query("SELECT p FROM EventParticipant p WHERE p.event.id = :eventId AND p.currentStatus = :status")
+    List<EventParticipant> findByEventIdAndCurrentStatus(@Param("eventId") Long eventId, @Param("status") ParticipantStatus status);
+
+    @Query("SELECT p FROM EventParticipant p WHERE p.event.id = :eventId")
+    List<EventParticipant> findAllByEventIdList(@Param("eventId") Long eventId);
 
 
 
