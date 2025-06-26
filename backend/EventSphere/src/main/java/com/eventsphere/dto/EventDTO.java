@@ -1,63 +1,44 @@
-package com.eventsphere.entity.event;
+package com.eventsphere.dto;
 
-import com.eventsphere.entity.user.User;
-import jakarta.persistence.*;
+import com.eventsphere.entity.event.Acess;
+import com.eventsphere.entity.event.State;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.List;
 
-@Entity
-public class Event {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class EventDTO {
     private Long id;
-    @Column(nullable = false)
+
     private String name;
-    @Column(nullable = false)
     private LocalDate dateFixedStart;
     private LocalDate dateStart;
-    @Column(nullable = false)
     private LocalDate dateFixedEnd;
     private LocalDate dateEnd;
-    @Column(nullable = false)
     private LocalTime timeFixedStart;
     private LocalTime timeStart;
-    @Column(nullable = false)
     private LocalTime timeFixedEnd;
     private LocalTime timeEnd;
-    @Column(nullable = false)
     private String localization;
-    @Column(nullable = false)
-    private String description;    private int maxParticipants;    private int classification;    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
+    private String description;
+    private int maxParticipants;
+    private int classification;
     private Acess acess;
-    @Column(columnDefinition = "LONGTEXT")
     private String photo;
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     private State state;
-    @ManyToOne(optional = false)
-    private User owner;
-    @ManyToMany
-    @JoinTable(
-            name = "event_collaborators",
-            joinColumns = @JoinColumn(name = "event_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
-    private List<User> collaborators;
-
-
-    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EventParticipant> participants;    @Column(unique = true)
+    private Long ownerId;
+    private List<Long> collaboratorIds;
+    private List<Long> participantIds;
+    private String userStatus;
+    private boolean userConfirmed;
+    private List<ParticipantDTO> participants;
     private String inviteToken;
-
-    @Column(unique = true, length = 8)
     private String inviteCode;
 
-    public Event(String name, LocalDate dateFixedStart, LocalDate dateFixedEnd, LocalTime timeFixedStart, LocalTime timeFixedEnd, String localization, String description, int maxParticipants, int classification, Acess acess, String photo, State state, User owner) {
+
+    public EventDTO() {
+    }
+    public EventDTO(String name, LocalDate dateFixedStart, LocalDate dateStart, LocalDate dateFixedEnd, LocalDate dateEnd, LocalTime timeFixedStart, LocalTime timeStart, LocalTime timeFixedEnd, LocalTime timeEnd, String localization, String description, int maxParticipants, int classification, Acess acess, String photo, State state) {
         this.name = name;
         this.dateFixedStart = dateFixedStart;
         this.dateFixedEnd = dateFixedEnd;
@@ -70,10 +51,8 @@ public class Event {
         this.acess = acess;
         this.photo = photo;
         this.state = state;
-        this.owner = owner;
     }
-
-    public Event(String name, LocalDate dateFixedStart, LocalDate dateFixedEnd, LocalTime timeFixedStart, LocalTime timeFixedEnd, String localization, String description, int maxParticipants, int classification, Acess acess, State state, User owner) {
+    public EventDTO(String name, LocalDate dateFixedStart, LocalDate dateStart, LocalDate dateFixedEnd, LocalDate dateEnd, LocalTime timeFixedStart, LocalTime timeStart, LocalTime timeFixedEnd, LocalTime timeEnd, String localization, String description, int maxParticipants, int classification, Acess acess, State state) {
         this.name = name;
         this.dateFixedStart = dateFixedStart;
         this.dateFixedEnd = dateFixedEnd;
@@ -85,12 +64,20 @@ public class Event {
         this.classification = classification;
         this.acess = acess;
         this.state = state;
-        this.owner = owner;
+    }
+    public EventDTO(String name, LocalDate dateFixedStart, LocalDate dateStart, LocalDate dateFixedEnd, LocalDate dateEnd, LocalTime timeFixedStart, LocalTime timeStart, LocalTime timeFixedEnd, LocalTime timeEnd, String localization, String description, int maxParticipants, int classification, Acess acess) {
+        this.name = name;
+        this.dateFixedStart = dateFixedStart;
+        this.dateFixedEnd = dateFixedEnd;
+        this.timeFixedStart = timeFixedStart;
+        this.timeFixedEnd = timeFixedEnd;
+        this.localization = localization;
+        this.description = description;
+        this.maxParticipants = maxParticipants;
+        this.classification = classification;
+        this.acess = acess;
     }
 
-    public Event() {
-
-    }
 
     public Long getId() {
         return id;
@@ -228,34 +215,52 @@ public class Event {
         this.state = state;
     }
 
-    public User getOwner() {
-        return owner;
+    public Long getOwnerId() {
+        return ownerId;
     }
 
-    public void setOwner(User owner) {
-        this.owner = owner;
+    public void setOwnerId(Long ownerId) {
+        this.ownerId = ownerId;
     }
 
-    public List<User> getCollaborators() {
-        return collaborators;
+    public List<Long> getCollaboratorIds() {
+        return collaboratorIds;
     }
 
-    public void setCollaborators(List<User> collaborators) {
-        this.collaborators = collaborators;
+    public void setCollaboratorIds(List<Long> collaboratorIds) {
+        this.collaboratorIds = collaboratorIds;
     }
 
-    public List<EventParticipant> getParticipants() {
+    public List<Long> getParticipantIds() {
+        return participantIds;
+    }
+
+    public void setParticipantIds(List<Long> participantIds) {
+        this.participantIds = participantIds;
+    }
+
+    public String getUserStatus() {
+        return userStatus;
+    }
+
+    public void setUserStatus(String userStatus) {
+        this.userStatus = userStatus;
+    }
+
+    public boolean isUserConfirmed() {
+        return userConfirmed;
+    }
+
+    public void setUserConfirmed(boolean userConfirmed) {
+        this.userConfirmed = userConfirmed;
+    }
+
+    public List<ParticipantDTO> getParticipants() {
         return participants;
     }
 
-    public void setParticipants(List<EventParticipant> participants) {
+    public void setParticipants(List<ParticipantDTO> participants) {
         this.participants = participants;
-    }
-    public LocalDateTime getDate(){
-    if (dateStart == null || timeStart == null){
-        return LocalDateTime.of(dateFixedStart, timeFixedStart);
-    }
-        return LocalDateTime.of(dateStart, timeStart);
     }
 
     public String getInviteToken() {
