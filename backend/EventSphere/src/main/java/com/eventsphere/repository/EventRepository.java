@@ -9,12 +9,16 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
     Event findByName(String name);    Event findByDescription(String description);
 
     Optional<Event> findByInviteToken(String inviteToken);    
     Event findByInviteCode(String inviteCode);
+
+    @Query("SELECT e.inviteCode FROM Event e WHERE e.inviteCode IS NOT NULL")
+    Set<String> findAllInviteCodes();
 
     @Query("SELECT e FROM Event e " +
             "JOIN e.participants p " +

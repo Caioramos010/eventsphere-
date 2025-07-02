@@ -26,7 +26,7 @@ public class EventMapper {
         dto.setUserUsername(participant.getUser().getUsername());
         dto.setUserEmail(participant.getUser().getEmail());
         dto.setUserPhoto(participant.getUser().getPhoto());
-        dto.setCollaborator(participant.isCollaborator());
+        dto.setIsCollaborator(participant.isCollaborator());
         dto.setStatus(participant.getCurrentStatus().name());
         dto.setConfirmed(participant.getCurrentStatus().name().equals("CONFIRMED"));
 
@@ -57,6 +57,14 @@ public class EventMapper {
         dto.setPhoto(event.getPhoto());
         dto.setState(event.getState());
         dto.setOwnerId(event.getOwner() != null ? event.getOwner().getId() : null);
+        
+        
+        if (event.getOwner() != null) {
+            dto.setOwnerName(event.getOwner().getName());
+            dto.setOwnerEmail(event.getOwner().getEmail());
+            dto.setOwnerPhoto(event.getOwner().getPhoto());
+        }
+        
         dto.setInviteToken(event.getInviteToken());
         dto.setInviteCode(event.getInviteCode());
 
@@ -141,19 +149,24 @@ public class EventMapper {
 
     public EventDTO toDTOWithUserContext(Event event, Long currentUserId) {
         EventDTO dto = toDTO(event);
-        
+        boolean isOwner = false;
+        boolean isCollaborator = false;
         if (dto != null && currentUserId != null) {
-
             if (event.getOwner() != null && event.getOwner().getId().equals(currentUserId)) {
                 dto.setUserStatus("owner");
+                isOwner = true;
             } else if (event.getCollaborators() != null && 
                       event.getCollaborators().stream().anyMatch(c -> c.getId().equals(currentUserId))) {
                 dto.setUserStatus("collaborator");
+                isCollaborator = true;
             } else if (event.getParticipants() != null && 
                       event.getParticipants().stream().anyMatch(p -> p.getUser().getId().equals(currentUserId))) {
                 dto.setUserStatus("participant");
-                
-
+                isCollaborator = event.getParticipants().stream()
+                    .filter(p -> p.getUser().getId().equals(currentUserId))
+                    .findFirst()
+                    .map(EventParticipant::isCollaborator)
+                    .orElse(false);
                 dto.setUserConfirmed(event.getParticipants().stream()
                         .filter(p -> p.getUser().getId().equals(currentUserId))
                         .findFirst()
@@ -163,7 +176,8 @@ public class EventMapper {
                 dto.setUserStatus("visitor");
             }
         }
-
+        
+        dto.setCanEdit(isOwner || isCollaborator);
         return dto;
     }
 
