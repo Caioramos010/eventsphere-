@@ -1,0 +1,30 @@
+@import './variables.css';
+
+@import './input-standardization.css';
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+.page-fade-in {
+  animation: fadeInPage 0.35s;
+}
+.page-fade-out {
+  animation: fadeOutPage 0.25s;
+}
+@keyframes fadeInPage {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fadeOutPage {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}

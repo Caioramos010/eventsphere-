@@ -1,0 +1,135 @@
+
+
+@import url('./common.css');
+@import url('./variables.css');
+
+
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+
+.modern-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+
+.card-title {
+  font-family: var(--font-family);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-white);
+  margin: 0 0 20px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 12px;
+}
+.upload-area{
+  display: flex;
+  flex-direction: column;
+  gap: 15px
+}
+
+.upload-placeholder:hover {
+  border-color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.photo-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 3px solid var(--primary-color);
+  box-shadow: 0 8px 32px rgba(232, 46, 155, 0.3);
+}
+
+.upload-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.upload-icon {
+  font-size: 48px;
+}
+
+.upload-text {
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hidden-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-row-three {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+
+.modern-input[type="date"],
+.modern-input[type="time"],
+.modern-input[type="number"] {
+  color-scheme: dark;
+  cursor: pointer;
+}
+
+.modern-input[type="date"]::-webkit-calendar-picker-indicator,
+.modern-input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.modern-input[type="number"]::-webkit-outer-spin-button,
+.modern-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+
+@media (max-width: 768px) {
+  .form-row,
+  .form-row-three {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .photo-preview,
+  .upload-placeholder {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .upload-icon {
+    font-size: 36px;
+  }
+}

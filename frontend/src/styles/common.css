@@ -1,0 +1,319 @@
+
+@import url('./variables.css');
+
+
+.page-container {
+  min-height: calc(100vh - 140px);
+  background: var(--gradient-main);
+  padding: 20px;
+  position: relative;
+}
+
+.page-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--overlay-primary), var(--overlay-secondary);
+  pointer-events: none;
+}
+
+.page-main {
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+  backdrop-filter: var(--glass-backdrop);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  background: var(--glass-bg-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glass);
+}
+
+.glass-card-large {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 32px;
+  backdrop-filter: var(--glass-backdrop);
+  transition: all 0.3s ease;
+}
+
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  color: var(--color-text-white);
+  margin-bottom: 10px;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.page-icon {
+  font-size: 40px;
+  color: var(--color-primary);
+}
+
+.page-title h1 {
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.page-title .subtitle {
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-gray-light);
+  margin-top: 4px;
+}
+
+
+.modern-btn {
+  background: var(--gradient-primary);
+  color: var(--color-text-white);
+  border: none;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modern-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glass);
+}
+
+.modern-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.modern-btn-secondary {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text-white);
+}
+
+.modern-btn-secondary:hover {
+  background: var(--glass-bg-strong);
+}
+
+
+.modern-input {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-bg);
+  color: var(--color-gray-dark);
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  backdrop-filter: var(--glass-backdrop);
+  transition: all 0.3s ease;
+}
+
+.modern-input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+  opacity: 1;
+}
+
+.modern-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--glass-bg-strong);
+  box-shadow: 0 0 0 3px rgba(232, 46, 155, 0.1);
+}
+
+.modern-select {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-bg);
+  color: var(--color-gray-dark);
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  backdrop-filter: var(--glass-backdrop);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.modern-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--glass-bg-strong);
+  box-shadow: 0 0 0 3px rgba(232, 46, 155, 0.1);
+}
+
+.modern-textarea {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-bg);
+  color: var(--color-text-white);
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  backdrop-filter: var(--glass-backdrop);
+  transition: all 0.3s ease;
+  resize: vertical;
+  min-height: 120px;
+}
+
+.modern-textarea::placeholder {
+  color: var(--color-gray-medium) !important;
+  opacity: 0.7;
+}
+
+.modern-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--glass-bg-strong);
+  box-shadow: 0 0 0 3px rgba(232, 46, 155, 0.1);
+}
+
+
+.modern-label {
+  display: block;
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-white);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-row-three {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+
+.status-message {
+  padding: 16px;
+  border-radius: 12px;
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  margin: 16px 0;
+}
+
+.status-success {
+  background: rgba(39, 174, 96, 0.2);
+  border: 1px solid rgba(39, 174, 96, 0.3);
+  color: #2ecc71;
+}
+
+.status-error {
+  background: rgba(231, 76, 60, 0.2);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  color: #e74c3c;
+}
+
+.status-warning {
+  background: rgba(243, 156, 18, 0.2);
+  border: 1px solid rgba(243, 156, 18, 0.3);
+  color: #f39c12;
+}
+
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 16px;
+  }
+  
+  .page-main {
+    gap: 16px;
+  }
+  
+  .glass-card {
+    padding: 20px;
+  }
+  
+  .glass-card-large {
+    padding: 24px;
+  }
+  
+  .form-row,
+  .form-row-three {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .page-title h1 {
+    font-size: 24px;
+  }
+  
+  .modern-btn {
+    padding: 14px 24px;
+    font-size: 13px;
+  }
+}

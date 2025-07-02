@@ -1,0 +1,144 @@
+
+.standard-card {
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.standard-card-clickable {
+  cursor: pointer;
+  border: none;
+  background: none;
+  text-align: left;
+  width: 100%;
+}
+
+.standard-card-clickable:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(232, 46, 155, 0.3);
+}
+
+
+.standard-card-default {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.standard-card-glass {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.standard-card-solid {
+  background: rgba(44, 62, 80, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.standard-card-gradient {
+  background: linear-gradient(135deg, 
+    rgba(232, 46, 155, 0.1) 0%, 
+    rgba(74, 158, 255, 0.1) 50%, 
+    rgba(232, 46, 155, 0.1) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+
+.standard-card-padding-small {
+  padding: 1rem;
+}
+
+.standard-card-padding-medium {
+  padding: 1.5rem;
+}
+
+.standard-card-padding-large {
+  padding: 2rem;
+}
+
+
+.standard-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.standard-card-glass.standard-card-hover:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.standard-card-default.standard-card-hover:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.standard-card-solid.standard-card-hover:hover {
+  background: rgba(44, 62, 80, 1);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.standard-card-gradient.standard-card-hover:hover {
+  background: linear-gradient(135deg, 
+    rgba(232, 46, 155, 0.15) 0%, 
+    rgba(74, 158, 255, 0.15) 50%, 
+    rgba(232, 46, 155, 0.15) 100%);
+}
+
+
+.standard-card-clickable:active {
+  transform: scale(0.98);
+}
+
+.standard-card-clickable.standard-card-hover:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
+
+@media (max-width: 768px) {
+  .standard-card-padding-large {
+    padding: 1.5rem;
+  }
+  
+  .standard-card-padding-medium {
+    padding: 1.25rem;
+  }
+  
+  .standard-card-padding-small {
+    padding: 1rem;
+  }
+  
+  .standard-card-hover:hover {
+    transform: translateY(-2px);
+  }
+}
+
+@media (max-width: 480px) {
+  .standard-card-padding-large {
+    padding: 1.25rem;
+  }
+  
+  .standard-card-padding-medium {
+    padding: 1rem;
+  }
+  
+  .standard-card-padding-small {
+    padding: 0.75rem;
+  }
+}
+
+
+@media (hover: none) and (pointer: coarse) {
+  .standard-card-hover:hover {
+    transform: none;
+  }
+  
+  .standard-card-clickable:active {
+    transform: scale(0.96);
+    transition: transform 0.1s ease;
+  }
+}

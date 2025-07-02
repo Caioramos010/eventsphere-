@@ -1,0 +1,74 @@
+
+
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
+textarea,
+select {
+  color: var(--color-gray-dark) !important;
+  font-family: var(--font-family) !important;
+}
+
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"])::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+  opacity: 1 !important;
+}
+
+
+.auth-input,
+.modern-input,
+.form-input,
+.login-input,
+.register-input,
+.search-input,
+.input {
+  color: var(--color-gray-dark) !important;
+}
+
+.auth-input::placeholder,
+.modern-input::placeholder,
+.form-input::placeholder,
+.login-input::placeholder,
+.register-input::placeholder,
+.search-input::placeholder,
+.input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+  opacity: 1 !important;
+}
+
+
+input[style*="background: rgba(255, 255, 255"],
+input[style*="background: white"],
+input[style*="background: #fff"] {
+  color: var(--color-gray-dark) !important;
+}
+
+
+input[style*="background: rgba(255, 255, 255, 0.1)"],
+input[style*="background: rgba(255, 255, 255, 0.05)"],
+.glass-bg input,
+.dark-theme input {
+  color: var(--color-gray-dark) !important;
+}
+
+
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="number"] {
+  color: var(--color-gray-dark) !important;
+}
+
+
+select option {
+  color: var(--color-gray-dark) !important;
+  background: var(--color-bg-white) !important;
+}
+
+
+input:focus:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
+textarea:focus,
+select:focus {
+  color: var(--color-gray-dark) !important;
+}

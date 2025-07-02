@@ -1,0 +1,118 @@
+/* Card Component Styles */
+.card {
+  background: white;
+  border: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  word-wrap: break-word;
+  background-clip: border-box;
+  transition: all 0.2s ease;
+}
+
+/* Variants */
+.card-default {
+  background: white;
+  border: 1px solid #e9ecef;
+}
+
+.card-glass {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.card-outlined {
+  background: white;
+  border: 2px solid #667eea;
+}
+
+.card-elevated {
+  background: white;
+  border: none;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Padding */
+.card-padding-none {
+  padding: 0;
+}
+
+.card-padding-small {
+  padding: 12px;
+}
+
+.card-padding-medium {
+  padding: 20px;
+}
+
+.card-padding-large {
+  padding: 32px;
+}
+
+/* States */
+.card-shadow {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-rounded {
+  border-radius: 12px;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.card-clickable {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.card-clickable:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* Subcomponents */
+.card-header {
+  padding: 20px 20px 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 16px;
+}
+
+.card-body {
+  flex: 1 1 auto;
+  padding: 0 20px;
+}
+
+.card-footer {
+  padding: 16px 20px 20px;
+  margin-top: 16px;
+  border-top: 1px solid #e9ecef;
+  padding-top: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .card-padding-medium {
+    padding: 16px;
+  }
+  
+  .card-padding-large {
+    padding: 20px;
+  }
+  
+  .card-header,
+  .card-body,
+  .card-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
