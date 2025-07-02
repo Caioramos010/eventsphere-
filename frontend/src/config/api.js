@@ -11,28 +11,42 @@ const API_CONFIG = {
     USER_PROFILE: '/api/user/get',
     
     EVENT_CREATE: '/api/event/register',
-    EVENT_EDIT: '/api/event/edit',
-    EVENT_GET: '/api/event/get',
-    EVENT_DELETE: '/api/event/delete',
+    EVENT_EDIT: '/api/event/{eventID}',
+    EVENT_GET: '/api/event/{eventID}',
+    EVENT_DELETE: '/api/event/{eventID}',
     EVENT_IMAGE: '/api/upload/event-image',
-    MY_EVENTS: '/api/event/get-myevents',
-    PUBLIC_EVENTS: '/api/event/get-public',
-    EVENT_START: '/api/event/start',
-    EVENT_FINISH: '/api/event/finish',      
-    EVENT_CANCEL: '/api/event/cancel',    
-    INVITE_GENERATE: '/api/event/invite/generate',
-    INVITE_VALIDATE: '/api/event/invite/validate',
-    EVENT_CODE_GENERATE: '/api/event/code/generate',
-    EVENT_CODE_VALIDATE: '/api/event/code/validate',
+    MY_EVENTS: '/api/event/my',
+    ALL_MY_EVENTS: '/api/event/all-my',
+    PUBLIC_EVENTS: '/api/event/public',
+    EVENT_START: '/api/event/{eventID}/start',
+    EVENT_FINISH: '/api/event/{eventID}/finish',      
+    EVENT_CANCEL: '/api/event/{eventID}/cancel',    
+    INVITE_GENERATE: '/api/event/{eventID}/invite',
+    INVITE_VALIDATE: '/api/event/invite/{token}',
+    EVENT_CODE_GENERATE: '/api/event/{eventID}/code',
+    EVENT_CODE_VALIDATE: '/api/event/validate-code',
     USER_PHOTO: '/api/upload/user-photo',
     FILE_DOWNLOAD: '/api/files',
     
     PARTICIPANT_ADD: '/api/participant/add',
     PARTICIPANT_REMOVE: '/api/participant/remove',
+    PARTICIPANT_LEAVE_EVENT: '/api/participant/leave-event',
+    PARTICIPANT_CONFIRM: '/api/participant/confirm',
+    PARTICIPANT_JOIN_WITH_INVITE: '/api/event/join/{token}',
+    PARTICIPANT_INVITE: '/api/participant/invite',
+    PARTICIPANT_STATUS_UPDATE: '/api/participant/status/{participantId}',
+    PARTICIPANT_JOIN_EVENT: '/api/participant/join-event',
+    PARTICIPANT_JOIN_WITH_CODE: '/api/participant/join-with-code',
+    PARTICIPANT_REMOVE_FROM_EVENT: '/api/participant/remove/{eventId}/{participantId}',
+    PARTICIPANT_CONFIRM_PARTICIPATION: '/api/participant/confirm/{eventId}/{participantId}',
+    PARTICIPANT_PROMOTE: '/api/participant/promote/{eventId}/{participantId}',
+    PARTICIPANT_DEMOTE: '/api/participant/demote/{eventId}/{participantId}',
+    PARTICIPANT_QR_CODE: '/api/participant/qr-code/{eventId}',
+    PARTICIPANT_ATTENDANCE_REPORT: '/api/participant/attendance-report/{eventId}',
+    PARTICIPANT_EVENT_PRESENT: '/api/participant/present/{eventId}',
+    PARTICIPANT_PRESENCE: '/api/participant/presence/{token}',
     
-    ADMIN: '/admin',
-    NEXT_EVENTS: '/api/event/next-events',
-    NEXT_PUBLIC_EVENTS: '/api/event/next-public-events'
+    ADMIN: '/admin'
   },
   
   DEFAULT_HEADERS: {
@@ -46,8 +60,12 @@ const API_CONFIG = {
 export default API_CONFIG;
 
 export const buildUrl = (endpoint, params = {}) => {
+  if (!endpoint) {
+    console.error('Endpoint is undefined or null');
+    throw new Error('Endpoint não pode ser undefined ou null');
+  }
+  
   if (endpoint.startsWith('http')) {
-    console.log('URL já completa detectada:', endpoint);
     if (Object.keys(params).length > 0) {
       const url = new URL(endpoint);
       Object.keys(params).forEach(key => {
@@ -55,7 +73,6 @@ export const buildUrl = (endpoint, params = {}) => {
           url.searchParams.append(key, params[key]);
         }
       });
-      console.log('URL com parâmetros:', url.toString());
       return url.toString();
     }
     
@@ -63,9 +80,15 @@ export const buildUrl = (endpoint, params = {}) => {
   }
   
   let url = `${API_CONFIG.BASE_URL}${endpoint}`;
-  console.log('Building URL from:', API_CONFIG.BASE_URL, endpoint);
   
-  // Adicionar parâmetros de query se fornecidos
+  Object.keys(params).forEach(key => {
+    const placeholder = `{${key}}`;
+    if (url.includes(placeholder)) {
+      url = url.replace(placeholder, params[key]);
+      delete params[key]; 
+    }
+  });
+  
   const queryParams = new URLSearchParams();
   Object.keys(params).forEach(key => {
     if (params[key] !== undefined && params[key] !== null) {
@@ -73,11 +96,10 @@ export const buildUrl = (endpoint, params = {}) => {
     }
   });
   
-  if (queryParams.toString()) {
+  if ([...queryParams].length > 0) {
     url += `?${queryParams.toString()}`;
   }
   
-  console.log('Final URL:', url);
   return url;
 };
 
