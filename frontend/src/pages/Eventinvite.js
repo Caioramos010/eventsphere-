@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Link } from '../components/Link';
 import { Header, Footer, PageTitle, StandardButton, StandardCard, BackButton } from '../components';
 import { IoArrowBack, IoLocationOutline, IoCalendarOutline, IoTimeOutline, IoLinkOutline, IoCopyOutline, IoCheckmarkOutline, IoQrCodeOutline, IoShareOutline, IoKeyOutline } from 'react-icons/io5';
-import './EventInvite.css';
+import '../styles/EventInvite.css';
 import EventService from '../services/EventService';
 
 const EventInvite = () => {
@@ -17,72 +17,25 @@ const EventInvite = () => {
   const [copyCodeSuccess, setCopyCodeSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  
-  const generateSecureEventCode = (eventData) => {
-    
-    const timestamp = Date.now();
-    const random = Math.random();
-    const eventName = eventData.name || 'Event';
-    const userId = localStorage.getItem('userId') || '0';
-    
-    
-    const entropy = `${timestamp}-${random}-${eventName}-${userId}-${eventData.dateStart}`;
-    
-    
-    let hash = 0;
-    for (let i = 0; i < entropy.length; i++) {
-      const char = entropy.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; 
-    }
-    
-    
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    let workingHash = Math.abs(hash);
-    
-    for (let i = 0; i < 8; i++) {
-      code += chars[workingHash % chars.length];
-      workingHash = Math.floor(workingHash / chars.length);
-      
-      if (workingHash < chars.length) {
-        workingHash += timestamp + i * 1000;
-      }
-    }
-    
-    return code;
-  };
-
   useEffect(() => {
     const loadEventAndGenerateInvite = async () => {
       try {
         setLoading(true);
-        
-        
         const eventResult = await EventService.getEventDetails(id);
         if (!eventResult.success) {
           setError(eventResult.message || 'Evento não encontrado');
           return;
         }
-        
-        setEvent(eventResult.event);        
+        setEvent(eventResult.event);
+        // Chama apenas o endpoint de link de convite
         const inviteResult = await EventService.generateInviteLink(id);
         if (inviteResult.success) {
           setInviteUrl(inviteResult.inviteUrl);
-          
-          
-          const codeResult = await EventService.generateEventCode(id);
-          if (codeResult.success) {
-            setEventCode(codeResult.eventCode);
-          } else {
-            
-            console.warn('Falha ao gerar código no backend, usando fallback seguro');
-            setEventCode(generateSecureEventCode(eventResult.event));
-          }
+          // Usa o código já existente do evento
+          setEventCode(eventResult.event.inviteCode || '');
         } else {
           setError(inviteResult.message || 'Erro ao gerar link de convite');
         }
-        
       } catch (error) {
         console.error('Error loading event and invite:', error);
         setError('Erro ao carregar dados do evento');

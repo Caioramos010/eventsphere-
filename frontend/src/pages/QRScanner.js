@@ -2,11 +2,14 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { BackButton } from '../components';
-import { IoArrowBack, IoQrCodeOutline, IoCheckmarkCircleOutline, IoCloseCircleOutline, IoFlashOutline, IoFlashOffOutline, IoCameraReverseOutline } from 'react-icons/io5';
+import { BackButton, LoadingSpinner, Message } from '../components';
+import { IoQrCodeOutline, IoCheckmarkCircleOutline, IoCloseCircleOutline, IoFlashOutline, IoFlashOffOutline, IoCameraReverseOutline } from 'react-icons/io5';
 import { BrowserQRCodeReader } from '@zxing/library';
-import API_CONFIG, { buildUrl } from '../config/api';
-import './QRScanner.css';
+import { buildUrl } from '../config/api';
+import API_CONFIG from '../config/api';
+import ParticipantService from '../services/ParticipantService';
+import { useDialog } from '../contexts/DialogContext';
+import '../styles/QRScanner.css';
 
 const QRScanner = () => {
   const { id } = useParams();
@@ -15,8 +18,7 @@ const QRScanner = () => {
   const streamRef = useRef(null);
   const readerRef = useRef(null);
   const scanIntervalRef = useRef(null);
-  
-  const [isScanning, setIsScanning] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
   const [hasCamera, setHasCamera] = useState(false);
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [facingMode, setFacingMode] = useState('environment'); 
@@ -27,34 +29,19 @@ const QRScanner = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [availableCameras, setAvailableCameras] = useState([]);
   const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
-  useEffect(() => {
-    loadEventData();
-    loadScannedParticipants();
-    
-    return () => {
-      cleanup();
-    };
-  }, [id]);
-
+  const dialog = useDialog();
   
-  useEffect(() => {
-    initializeCamera();
-  }, []);
-
   const cleanup = useCallback(() => {
-    
     if (scanIntervalRef.current) {
       clearInterval(scanIntervalRef.current);
       scanIntervalRef.current = null;
     }
 
-    
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
 
-    
     if (readerRef.current) {
       readerRef.current.reset();
       readerRef.current = null;
@@ -63,53 +50,10 @@ const QRScanner = () => {
     setIsScanning(false);
   }, []);
 
-  const initializeCamera = async () => {
-    try {
-      console.log('Inicializando câmera...');
-      
-      
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setError('Seu navegador não suporta acesso à câmera');
-        return;
-      }
-
-      
-      const isSecure = window.location.protocol === 'http:' || 
-                      window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1';
-      
-      if (!isSecure) {
-        console.warn('Protocolo não seguro detectado - pode causar problemas em mobile');
-      }
-
-      
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      
-      console.log(`Encontradas ${videoDevices.length} câmeras:`, videoDevices);
-      
-      if (videoDevices.length === 0) {
-        setError('Nenhuma câmera encontrada neste dispositivo');
-        return;
-      }
-
-      setAvailableCameras(videoDevices);
-      setHasCamera(true);
-
-      
-      readerRef.current = new BrowserQRCodeReader();
-      console.log('BrowserQRCodeReader inicializado');
-
-    } catch (err) {
-      console.error('Erro ao inicializar câmera:', err);
-      setError('Erro ao verificar câmeras disponíveis');
-    }
-  };
-
-  const loadEventData = async () => {
+  const loadEventData = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(buildUrl(`/api/event/${id}`), {
+      const response = await fetch(buildUrl(API_CONFIG.ENDPOINTS.EVENT_GET, { eventID: id }), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -128,12 +72,12 @@ const QRScanner = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id]);
 
-  const loadScannedParticipants = async () => {
+  const loadScannedParticipants = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(buildUrl(`/api/participant/event/${id}/present`), {
+      const response = await fetch(buildUrl(API_CONFIG.ENDPOINTS.PARTICIPANT_EVENT_PRESENT, { eventId: id }), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -148,10 +92,60 @@ const QRScanner = () => {
     } catch (err) {
       console.error('Erro ao carregar participantes:', err);
     }
-  };  const startScanner = async () => {
+  }, [id]);
+  
+  useEffect(() => {
+    loadEventData();
+    loadScannedParticipants();
+    
+    return () => {
+      cleanup();
+    };
+  }, [loadEventData, loadScannedParticipants, cleanup]);
+
+  
+  useEffect(() => {
+    initializeCamera();
+  }, []);
+
+  const initializeCamera = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError('Seu navegador não suporta acesso à câmera');
+        return;
+      }
+
+      
+      const isSecure = window.location.protocol === 'http:' || 
+                      window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1';
+      
+      if (!isSecure) {
+        console.warn('Protocolo não seguro detectado - pode causar problemas em mobile');
+      }
+
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      
+      if (videoDevices.length === 0) {
+        setError('Nenhuma câmera encontrada neste dispositivo');
+        return;
+      }
+
+      setAvailableCameras(videoDevices);
+      setHasCamera(true);
+
+      readerRef.current = new BrowserQRCodeReader();
+
+    } catch (err) {
+      console.error('Erro ao inicializar câmera:', err);
+      setError('Erro ao verificar câmeras disponíveis');
+    }
+  };
+
+  const startScanner = async () => {
     try {
       setError(null);
-      console.log('Iniciando scanner...');
 
       if (!videoRef.current) {
         setError('Elemento de vídeo não encontrado');
@@ -181,24 +175,15 @@ const QRScanner = () => {
       
       if (availableCameras.length > 0 && currentCameraIndex >= 0 && availableCameras[currentCameraIndex]) {
         constraints.video.deviceId = { exact: availableCameras[currentCameraIndex].deviceId };
-        
       }
 
-      console.log('Tentando obter câmera com constraints:', constraints);
-
-      
       streamRef.current = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log('Stream obtido com sucesso:', streamRef.current);
 
-      
       const videoTracks = streamRef.current.getVideoTracks();
       if (videoTracks.length === 0) {
         throw new Error('Nenhuma track de vídeo encontrada no stream');
       }
 
-      console.log('Video track info:', videoTracks[0].getSettings());
-
-      
       videoRef.current.srcObject = streamRef.current;
       
       
@@ -207,18 +192,10 @@ const QRScanner = () => {
       videoRef.current.playsInline = true;
       videoRef.current.autoplay = true;
 
-      
       const playPromise = new Promise((resolve, reject) => {
         const onLoadedMetadata = () => {
-          console.log('Video metadata carregada:', {
-            videoWidth: videoRef.current.videoWidth,
-            videoHeight: videoRef.current.videoHeight,
-            readyState: videoRef.current.readyState
-          });
-          
           videoRef.current.play()
             .then(() => {
-              console.log('Vídeo reproduzindo com sucesso');
               resolve();
             })
             .catch(reject);
@@ -232,7 +209,6 @@ const QRScanner = () => {
         videoRef.current.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
         videoRef.current.addEventListener('error', onError, { once: true });
 
-        
         setTimeout(() => {
           reject(new Error('Timeout ao carregar vídeo'));
         }, 10000);
@@ -240,16 +216,12 @@ const QRScanner = () => {
 
       await playPromise;
 
-      console.log('Vídeo carregado e reproduzindo, iniciando scanner...');
       setIsScanning(true);
 
-      
       if (!readerRef.current) {
         readerRef.current = new BrowserQRCodeReader();
-        console.log('BrowserQRCodeReader inicializado');
       }
 
-      
       startContinuousScanning();
 
     } catch (err) {
@@ -295,8 +267,6 @@ const QRScanner = () => {
   const startContinuousScanning = () => {
     if (!readerRef.current || !videoRef.current) return;
 
-    console.log('Iniciando scan contínuo...');
-    
     const scanFrame = async () => {
       if (!isScanning || !videoRef.current || !readerRef.current) return;
 
@@ -310,11 +280,9 @@ const QRScanner = () => {
         
         context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
         
-        
         const result = await readerRef.current.decodeFromImageElement(canvas);
         
         if (result && result.text) {
-          console.log('QR Code detectado:', result.text);
           handleScanSuccess(result.text);
         }
       } catch (err) {
@@ -329,25 +297,19 @@ const QRScanner = () => {
     scanIntervalRef.current = setInterval(scanFrame, 500);
   };
   const stopScanner = () => {
-    console.log('Parando scanner...');
     setIsScanning(false);
     
-    
     if (streamRef.current) {
-      console.log('Parando stream de vídeo...');
       streamRef.current.getTracks().forEach(track => {
         track.stop();
-        console.log('Track parada:', track.kind);
       });
       streamRef.current = null;
     }
 
-    
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
 
-    
     if (readerRef.current) {
       try {
         readerRef.current.reset();
@@ -355,88 +317,22 @@ const QRScanner = () => {
         console.warn('Erro ao resetar reader:', e);
       }
     }
-
-    console.log('Scanner parado com sucesso');
   };
 
   const handleScanSuccess = async (qrCodeData) => {
     try {
-      console.log('QR Code detectado:', qrCodeData);
-      
-      
       const cleanData = qrCodeData.trim();
       
-      
-      let participantId;
-      let eventId;
-      
-      
-      if (cleanData.includes('http') && cleanData.includes('/participant/')) {
-        const urlParts = cleanData.split('/');
-        const participantIndex = urlParts.findIndex(part => part === 'participant');
-        if (participantIndex !== -1 && participantIndex + 1 < urlParts.length) {
-          participantId = urlParts[participantIndex + 1];
-          
-          const eventIndex = urlParts.findIndex(part => part === 'event');
-          if (eventIndex !== -1 && eventIndex + 1 < urlParts.length) {
-            eventId = urlParts[eventIndex + 1];
-          }
-        }
-      }
-      
-      else if (cleanData.startsWith('{') && cleanData.endsWith('}')) {
-        try {
-          const data = JSON.parse(cleanData);
-          participantId = data.participantId || data.participant;
-          eventId = data.eventId || data.event;
-        } catch (e) {
-          console.warn('Erro ao parsear JSON do QR code:', e);
-        }
-      }
-      
-      else if (cleanData.includes(':')) {
-        const parts = cleanData.split(':');
-        participantId = parts[0];
-        eventId = parts[1];
-      }
-      
-      else if (/^\d+$/.test(cleanData)) {
-        participantId = cleanData;
-        eventId = id; 
-      }
-      
-      else if (cleanData.toLowerCase().includes('eventsphere') || 
-               cleanData.toLowerCase().includes('participant')) {
-        
-        const numbers = cleanData.match(/\d+/g);
-        if (numbers && numbers.length > 0) {
-          participantId = numbers[0];
-          eventId = numbers.length > 1 ? numbers[1] : id;
-        }
-      }
-      
-      
-      if (!participantId) {
+      if (!/^\d{6}$/.test(cleanData)) {
         setScanResult({ 
           success: false, 
-          message: 'QR Code não contém dados válidos do participante' 
+          message: 'QR Code deve conter um token de 6 dígitos' 
         });
         setTimeout(() => setScanResult(null), 3000);
         return;
       }
 
-      
-      if (eventId && eventId !== id) {
-        setScanResult({ 
-          success: false, 
-          message: 'QR Code é de outro evento' 
-        });
-        setTimeout(() => setScanResult(null), 3000);
-        return;
-      }
-
-      
-      await markPresence(participantId);
+      await markPresence(cleanData);
       
     } catch (err) {
       console.error('Erro ao processar QR code:', err);
@@ -448,23 +344,12 @@ const QRScanner = () => {
     }
   };
 
-  const markPresence = async (participantId) => {
+  const markPresence = async (token) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(buildUrl(`/api/participant/${participantId}/presence`), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ eventId: id })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const participant = data.data;
-        
-        
+      const result = await ParticipantService.markPresenceByToken(token);
+      
+      if (result.success) {
+        const participant = result.data;
         const newParticipant = {
           id: participant.id,
           name: participant.user?.name || 'Participante',
@@ -474,49 +359,24 @@ const QRScanner = () => {
         };
         
         setScannedParticipants(prev => {
-          
           if (prev.find(p => p.id === newParticipant.id)) {
-            setScanResult({ 
-              success: false, 
-              message: 'Participante já foi escaneado' 
-            });
+            dialog.alert('Participante já foi escaneado');
+            setScanResult({ success: false, message: 'Participante já foi escaneado' });
             return prev;
           }
-          
-          setScanResult({ 
-            success: true, 
-            participant: newParticipant,
-            message: 'Presença confirmada!' 
-          });
-          
+          dialog.alert('Presença confirmada!');
+          setScanResult({ success: true, participant: newParticipant, message: 'Presença confirmada!' });
           return [newParticipant, ...prev];
         });
-        
-      } else if (response.status === 404) {
-        setScanResult({ 
-          success: false, 
-          message: 'Participante não encontrado' 
-        });
-      } else if (response.status === 400) {
-        const errorData = await response.json();
-        setScanResult({ 
-          success: false, 
-          message: errorData.message || 'Erro ao marcar presença' 
-        });
       } else {
-        setScanResult({ 
-          success: false, 
-          message: 'Erro interno do servidor' 
-        });
+        dialog.alert(result.message || 'Erro ao marcar presença');
+        setScanResult({ success: false, message: result.message || 'Erro ao marcar presença' });
       }
     } catch (err) {
       console.error('Erro ao marcar presença:', err);
-      setScanResult({ 
-        success: false, 
-        message: 'Erro de conexão' 
-      });
+      dialog.alert('Erro de conexão');
+      setScanResult({ success: false, message: 'Erro de conexão' });
     }
-    
     setTimeout(() => setScanResult(null), 3000);
   };
   const toggleFlash = async () => {
@@ -543,7 +403,6 @@ const QRScanner = () => {
       });
 
       setFlashEnabled(!flashEnabled);
-      console.log(`Flash ${!flashEnabled ? 'ligado' : 'desligado'}`);
 
     } catch (err) {
       console.error('Erro ao controlar flash:', err);
@@ -560,23 +419,15 @@ const QRScanner = () => {
     }
 
     try {
-      console.log('Trocando câmera...');
-      
-      
       stopScanner();
-      
       
       const nextIndex = (currentCameraIndex + 1) % availableCameras.length;
       setCurrentCameraIndex(nextIndex);
-      
       
       const nextCamera = availableCameras[nextIndex];
       const newFacingMode = nextCamera.label.toLowerCase().includes('front') || 
                            nextCamera.label.toLowerCase().includes('user') ? 'user' : 'environment';
       setFacingMode(newFacingMode);
-      
-      console.log(`Trocando para câmera ${nextIndex}: ${nextCamera.label}`);
-      
       
       setTimeout(() => {
         startScanner();
@@ -590,9 +441,14 @@ const QRScanner = () => {
   };
 
   const handleManualInput = async () => {
-    const code = prompt('Digite o código do participante:');
-    if (code && code.trim()) {
-      await markPresence(code.trim());
+    const token = await dialog.prompt('Digite o token de 6 dígitos:', { label: 'Token', type: 'text' });
+    if (token && token.trim()) {
+      const cleanToken = token.trim();
+      if (!/^\d{6}$/.test(cleanToken)) {
+        dialog.alert('Token deve conter exatamente 6 dígitos');
+        return;
+      }
+      await markPresence(cleanToken);
     }
   };
 
@@ -648,11 +504,12 @@ const QRScanner = () => {
           {}
           <div className="event-info-banner">
             <h2>{event.title || event.name}</h2>
-            <p>{event.location} • {new Date(event.date).toLocaleDateString('pt-BR')}</p>
+            <p>{event.location || event.localization || 'Local não informado'}</p>
           </div>
 
           {}
-          <div className="scanner-section">            <div className="camera-container">
+          <div className="scanner-section">            
+            <div className="camera-container">
               <div className="camera-view">
                 {}
                 <video
@@ -742,7 +599,7 @@ const QRScanner = () => {
 
             {}
             <button className="manual-input-btn" onClick={handleManualInput}>
-              OU DIGITE O CÓDIGO
+              OU DIGITE O TOKEN
             </button>
           </div>
 
@@ -771,19 +628,14 @@ const QRScanner = () => {
           {}
           <div className="scanned-participants">
             <h3>PARTICIPANTES ESCANEADOS - {scannedParticipants.length}</h3>
-            <div className="participants-list">
-              {scannedParticipants.length === 0 ? (
+            <div className="participants-list">              {scannedParticipants.length === 0 ? (
                 <p className="no-participants">Nenhum participante escaneado ainda</p>
               ) : (
                 scannedParticipants.map(participant => (
                   <div key={participant.id} className="participant-item">
                     <div className="participant-info">
                       <span className="participant-name">{participant.name}</span>
-                      <span className="participant-details">
-                        {participant.age !== 'N/A' ? `${participant.age} • ` : ''}{participant.status}
-                      </span>
                     </div>
-                    <span className="scan-time">{participant.scannedAt}</span>
                     <IoCheckmarkCircleOutline className="status-icon success" />
                   </div>
                 ))

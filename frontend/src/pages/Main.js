@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import './Main.css';
+import '../styles/Main.css';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Link } from '../components/Link';
@@ -9,17 +9,13 @@ import AuthService from '../services/AuthService';
 import { useNavigate } from 'react-router-dom';
 import Calendar from '../components/Calendar';
 import EventCard from '../components/EventCard';
-
-import { FaCalendarAlt, FaCrown, FaUserFriends } from 'react-icons/fa';
-import { BsPersonFill } from 'react-icons/bs';
+import { FaCalendarAlt } from 'react-icons/fa';
 import { MdPublic, MdLock } from 'react-icons/md';
 import { IoGridOutline } from 'react-icons/io5';
 
 function Main() {  
   const [myEvents, setMyEvents] = useState([]);
   const [publicEvents, setPublicEvents] = useState([]);
-  const [nextEvents, setNextEvents] = useState([]);
-  const [nextPublicEvents, setNextPublicEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -32,21 +28,15 @@ function Main() {
 
     
     loadEvents();
-    loadNextEvents();
-    loadNextPublicEvents();
   }, [navigate]);  const loadEvents = async () => {
     try {
       setLoading(true);
-      
-      
       const [myEventsResult, publicEventsResult] = await Promise.all([
         EventService.getMyEvents(),
         EventService.getPublicEvents()
       ]);
 
       if (myEventsResult.success) {
-        console.log('Meus eventos carregados:', myEventsResult.events);
-        
         const validMyEvents = myEventsResult.events.filter(event => {
           if (!event.id) {
             console.warn('Evento ainda sem ID após processamento:', event);
@@ -54,7 +44,6 @@ function Main() {
           }
           return true;
         });
-        
         
         try {
           localStorage.setItem('myEventsCache', JSON.stringify(validMyEvents));
@@ -68,8 +57,6 @@ function Main() {
       }
 
       if (publicEventsResult.success) {
-        console.log('Eventos públicos carregados:', publicEventsResult.events);
-        
         const validPublicEvents = publicEventsResult.events.filter(event => {
           if (!event.id) {
             console.warn('Evento público ainda sem ID após processamento:', event);
@@ -77,7 +64,6 @@ function Main() {
           }
           return true;
         });
-        
         
         try {
           localStorage.setItem('publicEventsCache', JSON.stringify(validPublicEvents));
@@ -97,38 +83,7 @@ function Main() {
     }
   };
 
-  const loadNextEvents = async () => {
-    try {
-      const result = await EventService.getNextEvents();
-      if (result.success) {
-        setNextEvents(result.events.filter(ev => !!ev.id));
-      } else {
-        setNextEvents([]);
-      }
-    } catch (e) {
-      setNextEvents([]);
-    }
-  };
-
-  const loadNextPublicEvents = async () => {
-    try {
-      const response = await EventService.getNextPublicEvents?.();
-      if (response && response.success) {
-        setNextPublicEvents(response.events.filter(ev => !!ev.id));
-      } else {
-        setNextPublicEvents([]);
-      }
-    } catch (e) {
-      setNextPublicEvents([]);
-    }
-  };
-
-  
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Data não definida';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');  };  
-    return (
+  return (
     <>
       <Header />
       <div className="main-container">
@@ -190,10 +145,10 @@ function Main() {
                 {loading ? (
                   <div className="loading-message">Carregando...</div>
                 ) : error ? (
-                  <div className="status-message status-error">{error}</div>                ) : nextEvents.length === 0 ? (
-                  <div className="empty-message">Nenhum próximo evento encontrado</div>
+                  <div className="status-message status-error">{error}</div>                ) : myEvents.length === 0 ? (
+                  <div className="empty-message">Nenhum evento encontrado</div>
                 ) : (
-                  nextEvents.map(ev => (
+                  myEvents.map(ev => (
                     <EventCard 
                       key={ev.id} 
                       event={ev}                      type="primary" 
@@ -222,10 +177,10 @@ function Main() {
                 {loading ? (
                   <div className="loading-message">Carregando...</div>
                 ) : error ? (
-                  <div className="status-message status-error">{error}</div>                ) : nextPublicEvents.length === 0 ? (
-                  <div className="empty-message">Nenhum próximo evento público encontrado</div>
+                  <div className="status-message status-error">{error}</div>                ) : publicEvents.length === 0 ? (
+                  <div className="empty-message">Nenhum evento público encontrado</div>
                 ) : (
-                  nextPublicEvents.map(ev => (
+                  publicEvents.map(ev => (
                     <EventCard                      key={ev.id} 
                       event={ev} 
                       type="secondary" 

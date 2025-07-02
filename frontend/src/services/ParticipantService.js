@@ -1,12 +1,13 @@
 
 import { get, post, put } from '../fetchWithAuth';
-import API_CONFIG, { buildUrlWithId } from '../config/api';
+import API_CONFIG, { buildUrl } from '../config/api';
+import { handleServiceError } from '../utils/errorHandler';
 
 const ParticipantService = {
   
   async inviteParticipant(eventId, participantData) {
     try {
-      const response = await post(API_CONFIG.ENDPOINTS.PARTICIPANT_INVITE, {
+      const response = await post(buildUrl(API_CONFIG.ENDPOINTS.PARTICIPANT_INVITE), {
         eventId: eventId,
         ...participantData
       });
@@ -18,14 +19,13 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Erro ao enviar convite' };
       }
     } catch (error) {
-      console.error('Error inviting participant:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao enviar convite');
     }
   },
   
   async updateParticipantStatus(participantId, status) {
     try {
-      const url = buildUrlWithId(API_CONFIG.ENDPOINTS.PARTICIPANT_STATUS, participantId);
+      const url = buildUrl(API_CONFIG.ENDPOINTS.PARTICIPANT_STATUS_UPDATE, { participantId });
       const response = await fetch(url, {
         method: 'PUT',
         headers: {
@@ -42,16 +42,13 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Erro ao atualizar status' };
       }
     } catch (error) {
-      console.error('Error updating participant status:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao atualizar status');
     }
   },
   
-  
-  async confirmAttendance(eventId) {
+    async confirmAttendance(eventId) {
     try {
-      const url = `${API_CONFIG.BASE_URL}/api/participant/confirm`;
-      const response = await post(url, { eventId });
+      const response = await post(API_CONFIG.ENDPOINTS.PARTICIPANT_CONFIRM, { eventId });
       const data = await response.json();
       
       if (data.success || response.ok) {
@@ -60,15 +57,14 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Erro ao confirmar presença' };
       }
     } catch (error) {
-      console.error('Error confirming attendance:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao confirmar presença');
     }
   },
 
   
   async getEventParticipants(eventId) {
     try {
-      const url = buildUrlWithId(API_CONFIG.ENDPOINTS.EVENTS, eventId) + '/participants';
+      const url = buildUrl(`${API_CONFIG.ENDPOINTS.EVENT_GET}/participants`, { id: eventId });
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -78,8 +74,7 @@ const ParticipantService = {
       const data = await response.json();
       return { success: true, participants: data };
     } catch (error) {
-      console.error('Error fetching event participants:', error);
-      return { success: false, message: error.message, participants: [] };
+      return handleServiceError(error, 'Erro ao buscar participantes', { participants: [] });
     }
   },
 
@@ -95,8 +90,7 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Erro ao confirmar presença' };
       }
     } catch (error) {
-      console.error('Error confirming presence:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao confirmar presença');
     }
   },
 
@@ -112,8 +106,7 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Erro ao cancelar participação' };
       }
     } catch (error) {
-      console.error('Error canceling participation:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao cancelar participação');
     }
   },
 
@@ -129,14 +122,29 @@ const ParticipantService = {
         return { success: false, message: data.message || 'QR Code inválido' };
       }
     } catch (error) {
-      console.error('Error marking presence by QR:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao marcar presença por QR');
+    }
+  },
+
+  
+  async markPresenceByToken(token) {
+    try {
+      const response = await post(buildUrl(API_CONFIG.ENDPOINTS.PARTICIPANT_PRESENCE, { token }), {});
+      const data = await response.json();
+      
+      if (data.success || response.ok) {
+        return { success: true, message: 'Presença marcada com sucesso', data: data.data };
+      } else {
+        return { success: false, message: data.message || 'Token inválido' };
+      }
+    } catch (error) {
+      return handleServiceError(error, 'Erro ao marcar presença por token');
     }
   },
   
   async getParticipantStats(eventId) {
     try {
-      const url = buildUrlWithId(API_CONFIG.ENDPOINTS.EVENTS, eventId) + '/participants/stats';
+      const url = buildUrl(`${API_CONFIG.ENDPOINTS.EVENT_GET}/participants/stats`, { id: eventId });
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -146,16 +154,14 @@ const ParticipantService = {
       const data = await response.json();
       return { success: true, stats: data };
     } catch (error) {
-      console.error('Error fetching participant stats:', error);
-      return { success: false, message: error.message, stats: {} };
+      return handleServiceError(error, 'Erro ao buscar estatísticas', { stats: {} });
     }
   },
 
   
   async joinPublicEvent(eventId) {
     try {
-      
-      const response = await post(`${API_CONFIG.BASE_URL}/api/participant/join-event`, { eventId });
+      const response = await post(buildUrl(API_CONFIG.ENDPOINTS.PARTICIPANT_JOIN_EVENT), { eventId });
       const data = await response.json();
       
       if (data.success || response.ok) {
@@ -164,15 +170,14 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Erro ao participar do evento' };
       }
     } catch (error) {
-      console.error('Error joining public event:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao participar do evento');
     }
   },
 
   
   async joinEventWithInvite(eventId, inviteToken) {
     try {
-      const response = await post(`${API_CONFIG.BASE_URL}/api/participant/join-with-invite`, { 
+      const response = await post(buildUrl(API_CONFIG.ENDPOINTS.PARTICIPANT_JOIN_WITH_INVITE, { token: inviteToken }), { 
         eventId, 
         inviteToken 
       });
@@ -184,15 +189,14 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Erro ao participar do evento via convite' };
       }
     } catch (error) {
-      console.error('Error joining event with invite:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao participar do evento via convite');
     }
   },
 
   
   async joinEventWithCode(eventId, eventCode) {
     try {
-      const response = await post(`${API_CONFIG.BASE_URL}/api/participant/join-with-code`, { 
+      const response = await post(buildUrl(API_CONFIG.ENDPOINTS.PARTICIPANT_JOIN_WITH_CODE), { 
         eventId, 
         eventCode 
       });
@@ -204,15 +208,14 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Erro ao participar do evento via código' };
       }
     } catch (error) {
-      console.error('Error joining event with code:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao participar do evento via código');
     }
   },
 
   
   async removeParticipant(eventId, participantId) {
     try {
-      const response = await fetch(`${API_CONFIG.BASE_URL}/api/participant/remove/${eventId}/${participantId}`, {
+      const response = await fetch(buildUrl(API_CONFIG.ENDPOINTS.PARTICIPANT_REMOVE_FROM_EVENT, { eventId, participantId }), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -227,15 +230,14 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Erro ao remover participante' };
       }
     } catch (error) {
-      console.error('Error removing participant:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao remover participante');
     }
   },
 
   
   async confirmParticipant(eventId, participantId) {
     try {
-      const response = await put(`${API_CONFIG.BASE_URL}/api/participant/confirm/${eventId}/${participantId}`, {});
+      const response = await put(buildUrl(API_CONFIG.ENDPOINTS.PARTICIPANT_CONFIRM_PARTICIPATION, { eventId, participantId }), {});
       const data = await response.json();
       
       if (data.success || response.ok) {
@@ -244,15 +246,14 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Erro ao confirmar participação' };
       }
     } catch (error) {
-      console.error('Error confirming participant:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao confirmar participação');
     }
   },
 
   
   async promoteToCollaborator(eventId, participantId) {
     try {
-      const response = await put(`${API_CONFIG.BASE_URL}/api/participant/promote/${eventId}/${participantId}`, {});
+      const response = await put(buildUrl(API_CONFIG.ENDPOINTS.PARTICIPANT_PROMOTE, { eventId, participantId }), {});
       const data = await response.json();
       
       if (data.success || response.ok) {
@@ -261,15 +262,14 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Erro ao promover participante' };
       }
     } catch (error) {
-      console.error('Error promoting participant:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao promover participante');
     }
   },
 
   
   async demoteCollaborator(eventId, participantId) {
     try {
-      const response = await put(`${API_CONFIG.BASE_URL}/api/participant/demote/${eventId}/${participantId}`, {});
+      const response = await put(buildUrl(API_CONFIG.ENDPOINTS.PARTICIPANT_DEMOTE, { eventId, participantId }), {});
       const data = await response.json();
       
       if (data.success || response.ok) {
@@ -278,15 +278,14 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Erro ao remover colaborador' };
       }
     } catch (error) {
-      console.error('Error demoting collaborator:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao remover colaborador');
     }
   },
 
   
   async generateQrCode(eventId) {
     try {
-      const response = await get(`${API_CONFIG.BASE_URL}/api/participant/qr-code/${eventId}`);
+      const response = await get(buildUrl(API_CONFIG.ENDPOINTS.PARTICIPANT_QR_CODE, { eventId }));
       const data = await response.json();
       
       if (data.success || response.ok) {
@@ -295,15 +294,30 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Erro ao gerar QR Code' };
       }
     } catch (error) {
-      console.error('Error generating QR code:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao gerar QR Code');
     }
   },
 
+  async leaveEvent(eventId) {
+    try {
+      const response = await post(buildUrl(API_CONFIG.ENDPOINTS.PARTICIPANT_LEAVE_EVENT), {
+        eventId: eventId
+      });
+      const data = await response.json();
+      
+      if (data.success || response.ok) {
+        return { success: true, message: 'Você saiu do evento com sucesso' };
+      } else {
+        return { success: false, message: data.message || 'Erro ao sair do evento' };
+      }
+    } catch (error) {
+      return handleServiceError(error, 'Erro ao sair do evento');
+    }
+  },
   
   async getAttendanceReport(eventId) {
     try {
-      const response = await get(`${API_CONFIG.BASE_URL}/api/participant/attendance-report/${eventId}`);
+      const response = await get(buildUrl(API_CONFIG.ENDPOINTS.PARTICIPANT_ATTENDANCE_REPORT, { eventId }));
       const data = await response.json();
       
       if (data.success || response.ok) {
@@ -312,8 +326,7 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Erro ao obter relatório' };
       }
     } catch (error) {
-      console.error('Error getting attendance report:', error);
-      return { success: false, message: error.message || 'Erro de conexão' };
+      return handleServiceError(error, 'Erro ao obter relatório');
     }
   }
 };
