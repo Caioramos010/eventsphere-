@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Câmera - EventSphere</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #2c3e50;
+            color: white;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .success {
+            background: rgba(39, 174, 96, 0.3);
+            border: 1px solid #27ae60;
+        }
+        
+        .error {
+            background: rgba(231, 76, 60, 0.3);
+            border: 1px solid #e74c3c;
+        }
+        
+        .warning {
+            background: rgba(241, 196, 15, 0.3);
+            border: 1px solid #f1c40f;
+            color: #f39c12;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #E82E9B, #4a9eff);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(232, 46, 155, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        video {
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            border-radius: 10px;
+            border: 2px solid #E82E9B;
+            object-fit: cover;
+            margin: 20px 0;
+        }
+        
+        .info {
+            background: rgba(52, 152, 219, 0.3);
+            border: 1px solid #3498db;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: left;
+        }
+        
+        .info h4 {
+            margin: 0 0 10px 0;
+            color: #3498db;
+        }
+        
+        .info ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        
+        .debug-info {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #555;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: left;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎥 Teste de Câmera - EventSphere</h1>
+        <p>Esta página testa o acesso à câmera para dispositivos móveis</p>
+        
+        <div id="protocol-info" class="info">
+            <h4>Informações do Protocolo:</h4>
+            <p><strong>Protocolo:</strong> <span id="protocol"></span></p>
+            <p><strong>Host:</strong> <span id="hostname"></span></p>
+            <p><strong>User Agent:</strong> <span id="useragent"></span></p>
+        </div>
+        
+        <div id="status" class="status">
+            Aguardando teste...
+        </div>
+        
+        <button id="testCamera" onclick="testCameraAccess()">
+            🎥 Testar Acesso à Câmera
+        </button>
+        
+        <button id="listCameras" onclick="listCameras()" disabled>
+            📱 Listar Câmeras
+        </button>
+        
+        <button id="testConstraints" onclick="testConstraints()" disabled>
+            ⚙️ Testar Configurações
+        </button>
+        
+        <video id="video" style="display: none;" autoplay playsinline muted></video>
+        
+        <div id="camera-list"></div>
+        <div id="constraint-results"></div>
+        <div id="debug-info" class="debug-info" style="display: none;"></div>
+        
+        <div class="info">
+            <h4>Dicas para Problemas de Câmera:</h4>
+            <ul>
+                <li><strong>HTTPS Obrigatório:</strong> Dispositivos móveis precisam de HTTPS para acessar a câmera</li>
+                <li><strong>Permissões:</strong> Verifique se as permissões de câmera foram concedidas</li>
+                <li><strong>Câmera em Uso:</strong> Feche outros apps que podem estar usando a câmera</li>
+                <li><strong>Navegador:</strong> Teste em Chrome, Safari ou Firefox</li>
+                <li><strong>iOS Safari:</strong> Pode precisar de interação do usuário antes de acessar câmera</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+
+        document.getElementById('protocol').textContent = window.location.protocol;
+        document.getElementById('hostname').textContent = window.location.hostname;
+        document.getElementById('useragent').textContent = navigator.userAgent;
+        
+        let currentStream = null;
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function addDebugInfo(info) {
+            const debugDiv = document.getElementById('debug-info');
+            debugDiv.style.display = 'block';
+            debugDiv.innerHTML += `<p>${new Date().toLocaleTimeString()}: ${info}</p>`;
+        }
+        
+        async function testCameraAccess() {
+            updateStatus('Testando acesso à câmera...', 'info');
+            addDebugInfo('Iniciando teste de câmera...');
+            
+            try {
+
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('getUserMedia não está disponível neste navegador');
+                }
+                
+                addDebugInfo('getUserMedia está disponível');
+                
+
+                const isSecure = window.location.protocol === 'https:' || 
+                               window.location.hostname === 'localhost' || 
+                               window.location.hostname === '127.0.0.1';
+                
+                if (!isSecure) {
+                    updateStatus('⚠️ Aviso: HTTPS pode ser necessário para dispositivos móveis', 'warning');
+                    addDebugInfo('Protocolo não é HTTPS - pode causar problemas em mobile');
+                }
+                
+
+                addDebugInfo('Tentando acessar câmera traseira...');
+                const constraints = {
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 1280, min: 640 },
+                        height: { ideal: 720, min: 480 }
+                    }
+                };
+                
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                addDebugInfo('Câmera acessada com sucesso!');
+                
+
+                const video = document.getElementById('video');
+                video.srcObject = currentStream;
+                video.style.display = 'block';
+                
+                updateStatus('✅ Câmera funcionando perfeitamente!', 'success');
+                
+
+                document.getElementById('listCameras').disabled = false;
+                document.getElementById('testConstraints').disabled = false;
+                
+
+                const tracks = currentStream.getVideoTracks();
+                if (tracks.length > 0) {
+                    const settings = tracks[0].getSettings();
+                    addDebugInfo(`Configurações da câmera: ${JSON.stringify(settings, null, 2)}`);
+                }
+                
+            } catch (error) {
+                addDebugInfo(`Erro: ${error.name} - ${error.message}`);
+                
+                let errorMessage = 'Erro ao acessar câmera: ';
+                
+                if (error.name === 'NotAllowedError') {
+                    errorMessage += 'Permissão negada. Verifique as configurações do navegador.';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage += 'Nenhuma câmera encontrada neste dispositivo.';
+                } else if (error.name === 'NotReadableError') {
+                    errorMessage += 'Câmera está sendo usada por outro aplicativo.';
+                } else if (error.name === 'OverconstrainedError') {
+                    errorMessage += 'Configurações de câmera não suportadas.';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                updateStatus(errorMessage, 'error');
+            }
+        }
+        
+        async function listCameras() {
+            try {
+                addDebugInfo('Listando dispositivos de mídia...');
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                const listDiv = document.getElementById('camera-list');
+                listDiv.innerHTML = '<div class="info"><h4>Câmeras Encontradas:</h4>';
+                
+                if (videoDevices.length === 0) {
+                    listDiv.innerHTML += '<p>Nenhuma câmera encontrada</p>';
+                } else {
+                    videoDevices.forEach((device, index) => {
+                        listDiv.innerHTML += `
+                            <p><strong>Câmera ${index + 1}:</strong><br>
+                            ID: ${device.deviceId}<br>
+                            Label: ${device.label || 'Sem nome'}</p>
+                        `;
+                    });
+                }
+                
+                listDiv.innerHTML += '</div>';
+                addDebugInfo(`Encontradas ${videoDevices.length} câmeras`);
+                
+            } catch (error) {
+                addDebugInfo(`Erro ao listar câmeras: ${error.message}`);
+            }
+        }
+        
+        async function testConstraints() {
+            const constraintsDiv = document.getElementById('constraint-results');
+            constraintsDiv.innerHTML = '<div class="info"><h4>Teste de Configurações:</h4>';
+            
+            const testConfigs = [
+                { name: 'Câmera Traseira', constraints: { video: { facingMode: 'environment' } } },
+                { name: 'Câmera Frontal', constraints: { video: { facingMode: 'user' } } },
+                { name: 'HD (720p)', constraints: { video: { width: 1280, height: 720 } } },
+                { name: 'VGA (480p)', constraints: { video: { width: 640, height: 480 } } },
+                { name: 'Qualquer Câmera', constraints: { video: true } }
+            ];
+            
+            for (const config of testConfigs) {
+                try {
+                    addDebugInfo(`Testando: ${config.name}...`);
+                    const testStream = await navigator.mediaDevices.getUserMedia(config.constraints);
+                    constraintsDiv.innerHTML += `<p>✅ ${config.name}: <span style="color: #27ae60;">OK</span></p>`;
+                    testStream.getTracks().forEach(track => track.stop());
+                } catch (error) {
+                    constraintsDiv.innerHTML += `<p>❌ ${config.name}: <span style="color: #e74c3c;">${error.name}</span></p>`;
+                    addDebugInfo(`${config.name} falhou: ${error.message}`);
+                }
+            }
+            
+            constraintsDiv.innerHTML += '</div>';
+        }
+        
+
+        window.addEventListener('beforeunload', () => {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+        });
+        
+
+        window.addEventListener('load', () => {
+            addDebugInfo('Página carregada');
+            
+            if (!navigator.mediaDevices) {
+                updateStatus('❌ Este navegador não suporta acesso à câmera', 'error');
+                addDebugInfo('navigator.mediaDevices não disponível');
+            } else {
+                updateStatus('📱 Pronto para testar câmera. Clique no botão acima.', 'info');
+                addDebugInfo('navigator.mediaDevices disponível');
+            }
+        });
+    </script>
+</body>
+</html>
