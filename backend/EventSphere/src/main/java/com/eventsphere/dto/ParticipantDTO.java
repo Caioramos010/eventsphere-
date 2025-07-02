@@ -1,15 +1,24 @@
 package com.eventsphere.dto;
 
+import com.eventsphere.entity.event.ParticipantStatus;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class ParticipantDTO {
     private Long id;
+    private Long eventId;
     private Long userId;
     private String userName;
     private String userUsername;
     private String userEmail;
     private String userPhoto;
+    private ParticipantStatus currentStatus;
+    
+    @JsonProperty("isCollaborator")
     private boolean isCollaborator;
+    
     private String status;
     private boolean confirmed;
+    private String qrCode;
     
     public ParticipantDTO() {
     }
@@ -20,6 +29,14 @@ public class ParticipantDTO {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(Long eventId) {
+        this.eventId = eventId;
     }
 
     public Long getUserId() {
@@ -62,6 +79,7 @@ public class ParticipantDTO {
         this.userPhoto = userPhoto;
     }
 
+    @JsonProperty("isCollaborator")
     public boolean isCollaborator() {
         return isCollaborator;
     }
@@ -84,5 +102,21 @@ public class ParticipantDTO {
 
     public void setConfirmed(boolean confirmed) {
         this.confirmed = confirmed;
+    }
+
+    public ParticipantStatus getCurrentStatus() {
+        return currentStatus;
+    }
+
+    public void setCurrentStatus(ParticipantStatus currentStatus) {
+        this.currentStatus = currentStatus;
+    }
+
+    public String getQrCode() {
+        return qrCode;
+    }
+
+    public void setQrCode(String qrCode) {
+        this.qrCode = qrCode;
     }
 }
