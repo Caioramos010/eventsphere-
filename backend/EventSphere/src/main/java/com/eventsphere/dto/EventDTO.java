@@ -27,6 +27,9 @@ public class EventDTO {
     private String photo;
     private State state;
     private Long ownerId;
+    private String ownerName;
+    private String ownerEmail;
+    private String ownerPhoto;
     private List<Long> collaboratorIds;
     private List<Long> participantIds;
     private String userStatus;
@@ -34,6 +37,7 @@ public class EventDTO {
     private List<ParticipantDTO> participants;
     private String inviteToken;
     private String inviteCode;
+    private boolean canEdit; 
 
 
     public EventDTO() {
@@ -223,6 +227,30 @@ public class EventDTO {
         this.ownerId = ownerId;
     }
 
+    public String getOwnerName() {
+        return ownerName;
+    }
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
+    }
+
+    public String getOwnerEmail() {
+        return ownerEmail;
+    }
+
+    public void setOwnerEmail(String ownerEmail) {
+        this.ownerEmail = ownerEmail;
+    }
+
+    public String getOwnerPhoto() {
+        return ownerPhoto;
+    }
+
+    public void setOwnerPhoto(String ownerPhoto) {
+        this.ownerPhoto = ownerPhoto;
+    }
+
     public List<Long> getCollaboratorIds() {
         return collaboratorIds;
     }
@@ -277,5 +305,13 @@ public class EventDTO {
 
     public void setInviteCode(String inviteCode) {
         this.inviteCode = inviteCode;
+    }
+
+    public boolean isCanEdit() {
+        return canEdit;
+    }
+
+    public void setCanEdit(boolean canEdit) {
+        this.canEdit = canEdit;
     }
 }
