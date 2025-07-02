@@ -18,18 +18,15 @@ public class EventParticipant {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    private User user;    @Enumerated(EnumType.STRING)
+    @Column(name = "current_status", nullable = false)
     private ParticipantStatus currentStatus;
 
     @OneToMany(mappedBy = "participant", cascade = CascadeType.ALL, orphanRemoval = false)
-    private List<ParticipantHistory> participantHistory = new ArrayList<>();
-
-    @Column(nullable = false)
+    private List<ParticipantHistory> participantHistory = new ArrayList<>();    @Column(name = "is_collaborator", nullable = false)
     private boolean isCollaborator = false;
 
+    @Column(name = "qr_code")
     private String qrCode;
 
     public Long getId() {
