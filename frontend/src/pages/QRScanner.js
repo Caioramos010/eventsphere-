@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { BackButton, LoadingSpinner, Message } from '../components';
 import { IoQrCodeOutline, IoCheckmarkCircleOutline, IoCloseCircleOutline, IoFlashOutline, IoFlashOffOutline, IoCameraReverseOutline } from 'react-icons/io5';
-import { BrowserQRCodeReader } from '@zxing/library';
+import { Html5Qrcode } from 'html5-qrcode';
 import { buildUrl } from '../config/api';
 import API_CONFIG from '../config/api';
 import ParticipantService from '../services/ParticipantService';
@@ -14,11 +14,9 @@ import '../styles/QRScanner.css';
 const QRScanner = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const readerRef = useRef(null);
-  const scanIntervalRef = useRef(null);
-    const [isScanning, setIsScanning] = useState(false);
+  const scannerContainerRef = useRef(null);
+  const html5QrCodeRef = useRef(null);
+  const [isScanning, setIsScanning] = useState(false);
   const [hasCamera, setHasCamera] = useState(false);
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [facingMode, setFacingMode] = useState('environment'); 
@@ -30,26 +28,19 @@ const QRScanner = () => {
   const [availableCameras, setAvailableCameras] = useState([]);
   const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
   const dialog = useDialog();
+
   
   const cleanup = useCallback(() => {
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current);
-      scanIntervalRef.current = null;
+    if (html5QrCodeRef.current) {
+      html5QrCodeRef.current.stop().catch(err => {
+        console.error('Erro ao parar o scanner:', err);
+      });
+      html5QrCodeRef.current = null;
     }
-
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-
-    if (readerRef.current) {
-      readerRef.current.reset();
-      readerRef.current = null;
-    }
-
     setIsScanning(false);
   }, []);
 
+  
   const loadEventData = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -74,6 +65,7 @@ const QRScanner = () => {
     }
   }, [id]);
 
+  
   const loadScannedParticipants = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -94,6 +86,7 @@ const QRScanner = () => {
     }
   }, [id]);
   
+  
   useEffect(() => {
     loadEventData();
     loadScannedParticipants();
@@ -101,29 +94,87 @@ const QRScanner = () => {
     return () => {
       cleanup();
     };
-  }, [loadEventData, loadScannedParticipants, cleanup]);
+  }, [id, loadEventData, loadScannedParticipants, cleanup]);
 
   
   useEffect(() => {
     initializeCamera();
+    
+    
+    const style = document.createElement('style');
+    style.innerHTML = `
+      #reader {
+        position: relative !important;
+        min-height: 300px !important;
+        border: 1px solid #ccc !important;
+      }
+      #reader video {
+        height: 300px !important;
+        object-fit: cover !important;
+        border-radius: 12px !important;
+      }
+      #reader__scan_region {
+        min-height: 200px !important;
+      }
+      #reader__dashboard {
+        background: #f8f8f8 !important;
+        padding: 5px !important;
+      }
+      #reader__dashboard_section_csr button {
+        background: #2563eb !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 4px !important;
+        padding: 8px 16px !important;
+      }
+      #reader__dashboard_section_swaplink {
+        color: #2563eb !important;
+      }
+      #reader__status_span {
+        color: #333 !important;
+        font-size: 14px !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      if (style.parentNode) {
+        style.parentNode.removeChild(style);
+      }
+    };
   }, []);
 
+  
   const initializeCamera = async () => {
     try {
+      
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         setError('Seu navegador não suporta acesso à câmera');
         return;
       }
 
       
-      const isSecure = window.location.protocol === 'http:' || 
+      const browserSupport = 
+        typeof HTMLCanvasElement !== 'undefined' && 
+        !!HTMLCanvasElement.prototype.getContext && 
+        typeof Worker !== 'undefined';
+      
+      if (!browserSupport) {
+        setError('Seu navegador não suporta recursos necessários para o escaneamento de QR code');
+        return;
+      }
+
+      
+      const isSecure = window.location.protocol === 'https:' || 
                       window.location.hostname === 'localhost' || 
                       window.location.hostname === '127.0.0.1';
       
       if (!isSecure) {
-        console.warn('Protocolo não seguro detectado - pode causar problemas em mobile');
+        setError('Protocolo não seguro. Use HTTPS ou localhost para acessar a câmera.');
+        return;
       }
 
+      
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices.filter(device => device.kind === 'videoinput');
       
@@ -134,99 +185,69 @@ const QRScanner = () => {
 
       setAvailableCameras(videoDevices);
       setHasCamera(true);
-
-      readerRef.current = new BrowserQRCodeReader();
-
     } catch (err) {
-      console.error('Erro ao inicializar câmera:', err);
       setError('Erro ao verificar câmeras disponíveis');
     }
   };
 
+  
   const startScanner = async () => {
     try {
       setError(null);
+      setScanResult(null);
+      
+      
+      if (html5QrCodeRef.current && isScanning) {
+        await html5QrCodeRef.current.stop();
+        html5QrCodeRef.current = null;
+      }
 
-      if (!videoRef.current) {
-        setError('Elemento de vídeo não encontrado');
+      
+      const readerElement = document.getElementById('reader');
+      if (!readerElement) {
+        setError('Elemento do leitor não encontrado');
         return;
       }
 
       
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-      }
+      readerElement.style.display = 'block';
+      readerElement.style.width = '100%';
+      readerElement.style.height = '300px';
+      readerElement.style.minHeight = '300px';
+      readerElement.style.maxHeight = '300px';
 
       
-      let constraints = {
-        video: {
-          width: { ideal: 1280, min: 640 },
-          height: { ideal: 720, min: 480 },
-          frameRate: { ideal: 30 }
-        }
+      html5QrCodeRef.current = new Html5Qrcode("reader");
+
+      
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        disableFlip: false,
+        formatsToSupport: undefined
       };
 
+      let cameraId;
       
-      if (facingMode) {
-        constraints.video.facingMode = facingMode;
+      
+      if (availableCameras.length > 0 && currentCameraIndex >= 0 && currentCameraIndex < availableCameras.length) {
+        cameraId = availableCameras[currentCameraIndex].deviceId;
+      } else {
+        
+        cameraId = { facingMode };
       }
 
       
-      if (availableCameras.length > 0 && currentCameraIndex >= 0 && availableCameras[currentCameraIndex]) {
-        constraints.video.deviceId = { exact: availableCameras[currentCameraIndex].deviceId };
-      }
-
-      streamRef.current = await navigator.mediaDevices.getUserMedia(constraints);
-
-      const videoTracks = streamRef.current.getVideoTracks();
-      if (videoTracks.length === 0) {
-        throw new Error('Nenhuma track de vídeo encontrada no stream');
-      }
-
-      videoRef.current.srcObject = streamRef.current;
-      
-      
-      videoRef.current.style.display = 'block';
-      videoRef.current.muted = true;
-      videoRef.current.playsInline = true;
-      videoRef.current.autoplay = true;
-
-      const playPromise = new Promise((resolve, reject) => {
-        const onLoadedMetadata = () => {
-          videoRef.current.play()
-            .then(() => {
-              resolve();
-            })
-            .catch(reject);
-        };
-
-        const onError = (error) => {
-          console.error('Erro no vídeo:', error);
-          reject(error);
-        };
-
-        videoRef.current.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
-        videoRef.current.addEventListener('error', onError, { once: true });
-
-        setTimeout(() => {
-          reject(new Error('Timeout ao carregar vídeo'));
-        }, 10000);
-      });
-
-      await playPromise;
+      await html5QrCodeRef.current.start(
+        cameraId, 
+        config,
+        handleScanSuccess,
+        handleScanError
+      );
 
       setIsScanning(true);
-
-      if (!readerRef.current) {
-        readerRef.current = new BrowserQRCodeReader();
-      }
-
-      startContinuousScanning();
-
     } catch (err) {
-      console.error('Erro ao iniciar scanner:', err);
-      
       let errorMessage = 'Erro ao acessar a câmera.';
       
       if (err.name === 'NotAllowedError') {
@@ -240,11 +261,17 @@ const QRScanner = () => {
         
         
         try {
-          streamRef.current = await navigator.mediaDevices.getUserMedia({ video: true });
-          videoRef.current.srcObject = streamRef.current;
-          await videoRef.current.play();
+          html5QrCodeRef.current = new Html5Qrcode("reader");
+          await html5QrCodeRef.current.start(
+            { facingMode: 'environment' },
+            {
+              fps: 5,
+              qrbox: { width: 200, height: 200 }
+            },
+            handleScanSuccess,
+            handleScanError
+          );
           setIsScanning(true);
-          startContinuousScanning();
           return;
         } catch (simpleError) {
           errorMessage = `Erro mesmo com configuração básica: ${simpleError.message}`;
@@ -255,100 +282,105 @@ const QRScanner = () => {
       
       setError(errorMessage);
       setIsScanning(false);
-      
-      
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-      }
     }
   };
 
-  const startContinuousScanning = () => {
-    if (!readerRef.current || !videoRef.current) return;
-
-    const scanFrame = async () => {
-      if (!isScanning || !videoRef.current || !readerRef.current) return;
-
-      try {
-        
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        
-        canvas.width = videoRef.current.videoWidth || 640;
-        canvas.height = videoRef.current.videoHeight || 480;
-        
-        context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        
-        const result = await readerRef.current.decodeFromImageElement(canvas);
-        
-        if (result && result.text) {
-          handleScanSuccess(result.text);
-        }
-      } catch (err) {
-        
-        if (err.name !== 'NotFoundException') {
-          console.debug('Erro de scan:', err.message);
-        }
-      }
-    };
-
+  
+  const handleScanError = (error) => {
     
-    scanIntervalRef.current = setInterval(scanFrame, 500);
-  };
-  const stopScanner = () => {
-    setIsScanning(false);
-    
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => {
-        track.stop();
-      });
-      streamRef.current = null;
-    }
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-
-    if (readerRef.current) {
-      try {
-        readerRef.current.reset();
-      } catch (e) {
-        console.warn('Erro ao resetar reader:', e);
-      }
+    if (
+      typeof error === 'string' && (
+        error.includes('NotFoundException') || 
+        error.includes('IndexSizeError') || 
+        error.includes('source width is 0') ||
+        error.includes('MultiFormatReader') ||
+        error.includes('No MultiFormat Readers') ||
+        error.includes('could not decode') ||
+        error.includes('not found')
+      )
+    ) {
+      
+      return;
     }
   };
 
-  const handleScanSuccess = async (qrCodeData) => {
+  
+  const handleScanSuccess = async (decodedText, decodedResult) => {
     try {
-      const cleanData = qrCodeData.trim();
       
-      if (!/^\d{6}$/.test(cleanData)) {
-        setScanResult({ 
-          success: false, 
-          message: 'QR Code deve conter um token de 6 dígitos' 
-        });
-        setTimeout(() => setScanResult(null), 3000);
+      if (html5QrCodeRef.current && isScanning) {
+        await html5QrCodeRef.current.pause();
+      }
+      
+      
+      let token = decodedText.trim();
+      
+      
+      token = token.replace(/\D/g, '');
+      
+      
+      if (token.length > 6) {
+        token = token.slice(-6);
+      }
+      
+      
+      if (!/^\d{6}$/.test(token)) {
+        dialog.alert('QR Code inválido. Esperado um token de 6 dígitos.');
+        setScanResult({ success: false, message: 'QR Code inválido' });
+        
+        
+        setTimeout(() => {
+          if (html5QrCodeRef.current && isScanning) {
+            html5QrCodeRef.current.resume();
+          }
+          setScanResult(null);
+        }, 3000);
         return;
       }
-
-      await markPresence(cleanData);
+      
+      
+      await markPresence(token);
+      
+      
+      setTimeout(() => {
+        if (html5QrCodeRef.current && isScanning) {
+          html5QrCodeRef.current.resume();
+        }
+        setScanResult(null);
+      }, 5000);
       
     } catch (err) {
-      console.error('Erro ao processar QR code:', err);
-      setScanResult({ 
-        success: false, 
-        message: 'Erro ao processar QR code' 
-      });
-      setTimeout(() => setScanResult(null), 3000);
+      
+      if (err.isParticipantAlreadyPresent || (err.message && err.message.includes('já está presente'))) {
+        dialog.alert('Participante já está presente');
+      } else {
+        dialog.alert('Erro ao processar QR code');
+      }
+      
+      
+      setTimeout(() => {
+        if (html5QrCodeRef.current && isScanning) {
+          html5QrCodeRef.current.resume();
+        }
+      }, 3000);
     }
   };
 
+  
   const markPresence = async (token) => {
     try {
+      
+      if (!/^\d{6}$/.test(token)) {
+        dialog.alert('Token inválido. Deve conter exatamente 6 dígitos');
+        setScanResult({ success: false, message: 'Token inválido' });
+        return;
+      }
+      
+      
       const result = await ParticipantService.markPresenceByToken(token);
       
       if (result.success) {
+        
         const participant = result.data;
         const newParticipant = {
           id: participant.id,
@@ -373,44 +405,57 @@ const QRScanner = () => {
         setScanResult({ success: false, message: result.message || 'Erro ao marcar presença' });
       }
     } catch (err) {
-      console.error('Erro ao marcar presença:', err);
-      dialog.alert('Erro de conexão');
-      setScanResult({ success: false, message: 'Erro de conexão' });
+      
+      if (err.isParticipantAlreadyPresent || (err.message && err.message.includes('já está presente'))) {
+        dialog.alert('Participante já está presente');
+        setScanResult({ success: false, message: 'Participante já está presente' });
+      } else {
+        
+        dialog.alert('Erro ao marcar presença');
+        setScanResult({ success: false, message: 'Erro ao marcar presença' });
+      }
     }
-    setTimeout(() => setScanResult(null), 3000);
   };
-  const toggleFlash = async () => {
-    if (!streamRef.current) {
-      setError('Câmera não está ativa');
-      return;
-    }
 
-    try {
-      const track = streamRef.current.getVideoTracks()[0];
-      if (!track) {
-        setError('Track de vídeo não encontrado');
-        return;
-      }
-
-      const capabilities = track.getCapabilities();
-      if (!capabilities.torch) {
-        setError('Flash não suportado neste dispositivo');
-        return;
-      }
-
-      await track.applyConstraints({
-        advanced: [{ torch: !flashEnabled }]
+  
+  const stopScanner = () => {
+    if (html5QrCodeRef.current && isScanning) {
+      html5QrCodeRef.current.stop().then(() => {
+        setIsScanning(false);
+        html5QrCodeRef.current = null;
+        
+        
+        const readerElement = document.getElementById('reader');
+        if (readerElement) {
+          readerElement.style.display = 'none';
+        }
+      }).catch(err => {
+        
+        html5QrCodeRef.current = null;
+        setIsScanning(false);
       });
-
-      setFlashEnabled(!flashEnabled);
-
-    } catch (err) {
-      console.error('Erro ao controlar flash:', err);
-      setError('Erro ao controlar flash');
-      setTimeout(() => setError(null), 3000);
+    } else {
+      setIsScanning(false);
     }
   };
 
+  
+  const toggleFlash = async () => {
+    if (html5QrCodeRef.current && isScanning) {
+      try {
+        await html5QrCodeRef.current.applyVideoConstraints({
+          advanced: [{ torch: !flashEnabled }]
+        });
+        setFlashEnabled(!flashEnabled);
+      } catch (err) {
+        console.error('Erro ao controlar flash:', err);
+        setError('Flash não suportado neste dispositivo');
+        setTimeout(() => setError(null), 3000);
+      }
+    }
+  };
+
+  
   const switchCamera = async () => {
     if (availableCameras.length <= 1) {
       setError('Apenas uma câmera disponível');
@@ -419,35 +464,54 @@ const QRScanner = () => {
     }
 
     try {
-      stopScanner();
+      
+      if (html5QrCodeRef.current && isScanning) {
+        await html5QrCodeRef.current.stop();
+      }
+      
       
       const nextIndex = (currentCameraIndex + 1) % availableCameras.length;
       setCurrentCameraIndex(nextIndex);
       
+      
       const nextCamera = availableCameras[nextIndex];
       const newFacingMode = nextCamera.label.toLowerCase().includes('front') || 
-                           nextCamera.label.toLowerCase().includes('user') ? 'user' : 'environment';
+                         nextCamera.label.toLowerCase().includes('user') ? 'user' : 'environment';
       setFacingMode(newFacingMode);
+      
       
       setTimeout(() => {
         startScanner();
-      }, 500);
+      }, 1000);
       
     } catch (err) {
-      console.error('Erro ao trocar câmera:', err);
       setError('Erro ao trocar câmera');
       setTimeout(() => setError(null), 3000);
     }
   };
 
+  
   const handleManualInput = async () => {
-    const token = await dialog.prompt('Digite o token de 6 dígitos:', { label: 'Token', type: 'text' });
-    if (token && token.trim()) {
-      const cleanToken = token.trim();
+    const tokenInput = await dialog.prompt('Digite o token de 6 dígitos:', { label: 'Token', type: 'text' });
+    if (tokenInput && tokenInput.trim()) {
+      
+      let cleanToken = tokenInput.trim();
+      
+      
+      cleanToken = cleanToken.replace(/\D/g, '');
+      
+      
+      if (cleanToken.length > 6) {
+        cleanToken = cleanToken.slice(-6);
+      }
+      
+      
       if (!/^\d{6}$/.test(cleanToken)) {
         dialog.alert('Token deve conter exatamente 6 dígitos');
         return;
       }
+      
+      
       await markPresence(cleanToken);
     }
   };
@@ -461,9 +525,7 @@ const QRScanner = () => {
       <>
         <Header />
         <div className="qr-scanner-container">
-          <div className="loading-container">
-            <p>Carregando...</p>
-          </div>
+          <LoadingSpinner />
         </div>
         <Footer />
       </>
@@ -475,10 +537,13 @@ const QRScanner = () => {
       <>
         <Header />
         <div className="qr-scanner-container">
-          <div className="error-container">
-            <p>Evento não encontrado</p>
-            <button onClick={handleBack}>Voltar</button>
-          </div>
+          <Message 
+            type="error" 
+            title="Evento não encontrado" 
+            message="Não foi possível carregar os dados do evento."
+            actionText="Voltar"
+            onAction={() => navigate('/events')}
+          />
         </div>
         <Footer />
       </>
@@ -489,7 +554,7 @@ const QRScanner = () => {
     <>
       <Header />
       <div className="qr-scanner-container">
-        <div className="qr-scanner-main">          {}
+        <div className="qr-scanner-main">
           <div className="scanner-header">
             <BackButton onClick={handleBack} />
             <div className="scanner-title">
@@ -501,93 +566,71 @@ const QRScanner = () => {
             </div>
           </div>
 
-          {}
           <div className="event-info-banner">
             <h2>{event.title || event.name}</h2>
             <p>{event.location || event.localization || 'Local não informado'}</p>
           </div>
 
-          {}
           <div className="scanner-section">            
             <div className="camera-container">
-              <div className="camera-view">
-                {}
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  style={{ 
-                    display: isScanning ? 'block' : 'none',
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover'
-                  }}
-                />
-                
-                {!isScanning && (
-                  <div className="camera-placeholder">
-                    <IoQrCodeOutline className="placeholder-icon" />
-                    <p>Câmera não iniciada</p>
-                    {availableCameras.length > 0 && (
-                      <p className="camera-info">
-                        {availableCameras.length} câmera(s) detectada(s)
-                        <br />
-                        Atual: {currentCameraIndex >= 0 && availableCameras[currentCameraIndex] ? 
-                          (availableCameras[currentCameraIndex].label || `Câmera ${currentCameraIndex + 1}`) : 
-                          'Nenhuma selecionada'}
-                      </p>
-                    )}
-                    <button 
-                      className="start-camera-btn" 
-                      onClick={startScanner}
-                      disabled={!hasCamera}
-                    >
-                      {hasCamera ? 'INICIAR CÂMERA' : 'CÂMERA INDISPONÍVEL'}
-                    </button>
-                  </div>
-                )}
-                
-                {isScanning && (
-                  <>
-                    {}
-                    <div className="scan-overlay">
-                      <div className="scan-frame">
-                        <div className="scan-corner top-left"></div>
-                        <div className="scan-corner top-right"></div>
-                        <div className="scan-corner bottom-left"></div>
-                        <div className="scan-corner bottom-right"></div>
-                        <div className="scan-line"></div>
-                      </div>
-                    </div>                    {}
-                    <div className="camera-controls">
-                      <button 
-                        className="control-btn" 
-                        onClick={toggleFlash}
-                        disabled={!streamRef.current}
-                        title="Toggle Flash"
-                      >
-                        {flashEnabled ? <IoFlashOffOutline /> : <IoFlashOutline />}
-                      </button>
-                      <button 
-                        className="control-btn" 
-                        onClick={switchCamera}
-                        disabled={availableCameras.length <= 1}
-                        title={`Switch Camera (${currentCameraIndex + 1}/${availableCameras.length})`}
-                      >
-                        <IoCameraReverseOutline />
-                      </button>
-                      <button 
-                        className="control-btn stop-btn" 
-                        onClick={stopScanner}
-                        title="Stop Camera"
-                      >
-                        <IoCloseCircleOutline />
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+              <div id="reader" style={{ 
+                width: '100%', 
+                height: '300px',
+                minHeight: '300px',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                display: isScanning ? 'block' : 'none'
+              }} ref={scannerContainerRef}></div>
+              
+              {!isScanning && (
+                <div className="camera-placeholder">
+                  <IoQrCodeOutline className="placeholder-icon" />
+                  <p>Câmera não iniciada</p>
+                  {availableCameras.length > 0 && (
+                    <p className="camera-info">
+                      {availableCameras.length} câmera(s) detectada(s)
+                      <br />
+                      Atual: {currentCameraIndex >= 0 && availableCameras[currentCameraIndex] ? 
+                        (availableCameras[currentCameraIndex].label || `Câmera ${currentCameraIndex + 1}`) : 
+                        'Nenhuma selecionada'}
+                    </p>
+                  )}
+                  <button 
+                    className="start-camera-btn" 
+                    onClick={startScanner}
+                    disabled={!hasCamera}
+                  >
+                    {hasCamera ? 'INICIAR CÂMERA' : 'CÂMERA INDISPONÍVEL'}
+                  </button>
+                </div>
+              )}
+              
+              {isScanning && (
+                <div className="camera-controls">
+                  <button 
+                    className="control-btn" 
+                    onClick={toggleFlash}
+                    title="Toggle Flash"
+                  >
+                    {flashEnabled ? <IoFlashOffOutline /> : <IoFlashOutline />}
+                  </button>
+                  <button 
+                    className="control-btn" 
+                    onClick={switchCamera}
+                    disabled={availableCameras.length <= 1}
+                    title={`Switch Camera (${currentCameraIndex + 1}/${availableCameras.length})`}
+                  >
+                    <IoCameraReverseOutline />
+                  </button>
+                  <button 
+                    className="control-btn stop-btn" 
+                    onClick={stopScanner}
+                    title="Stop Camera"
+                  >
+                    <IoCloseCircleOutline />
+                  </button>
+                </div>
+              )}
 
               {error && (
                 <div className="error-message">
@@ -597,13 +640,13 @@ const QRScanner = () => {
               )}
             </div>
 
-            {}
-            <button className="manual-input-btn" onClick={handleManualInput}>
-              OU DIGITE O TOKEN
-            </button>
+            <div className="action-buttons">
+              <button className="manual-input-btn" onClick={handleManualInput}>
+                DIGITE O TOKEN
+              </button>
+            </div>
           </div>
 
-          {}
           {scanResult && (
             <div className={`scan-result ${scanResult.success ? 'success' : 'error'}`}>
               <div className="result-icon">
@@ -625,10 +668,10 @@ const QRScanner = () => {
             </div>
           )}
 
-          {}
           <div className="scanned-participants">
             <h3>PARTICIPANTES ESCANEADOS - {scannedParticipants.length}</h3>
-            <div className="participants-list">              {scannedParticipants.length === 0 ? (
+            <div className="participants-list">
+              {scannedParticipants.length === 0 ? (
                 <p className="no-participants">Nenhum participante escaneado ainda</p>
               ) : (
                 scannedParticipants.map(participant => (

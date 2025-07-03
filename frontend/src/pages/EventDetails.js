@@ -245,6 +245,12 @@ const EventDetails = () => {
       await dialog.alert('Erro ao cancelar o evento');
     }
   };  const handleConfirmAttendance = async () => {
+    // Verifica se o evento já foi iniciado
+    if (event.state !== 'CREATED') {
+      await dialog.alert('Não é possível confirmar presença pois o evento já foi iniciado.');
+      return;
+    }
+    
     setIsConfirmingAttendance(true);
     try {
       const result = await ParticipantService.confirmAttendance(id);
@@ -269,8 +275,8 @@ const EventDetails = () => {
   };
 
   const handleLeaveEvent = async () => {
-    
-    if (event.state === 'ACTIVE') {
+    // Verifica se o evento já foi iniciado
+    if (event.state !== 'CREATED') {
       await dialog.alert('Não é possível sair do evento pois ele já foi iniciado.');
       return;
     }
@@ -739,7 +745,13 @@ const EventDetails = () => {
                     <span>Relatório de Presença</span>
                   </button>
                 )}
-                  {!canEdit && event.userStatus === 'participant' && !userConfirmed && event.state !== 'FINISHED' && event.state !== 'CANCELED' && (
+                {!canEdit && (event.userIsCollaborator || event.ownerId === event.currentUserId) && event.state === 'FINISHED' && (
+                  <button className="modern-btn event-action-btn report-btn" onClick={loadAttendanceReport}>
+                    <IoCheckmarkCircleOutline />
+                    <span>Relatório de Presença</span>
+                  </button>
+                )}
+                  {!canEdit && event.userStatus === 'participant' && !userConfirmed && event.state === 'CREATED' && (
                   <button 
                     className="modern-btn event-action-btn confirm-btn" 
                     onClick={handleConfirmAttendance}
@@ -750,7 +762,7 @@ const EventDetails = () => {
                   </button>
                 )}
 
-                {!canEdit && event.userStatus === 'participant' && event.state !== 'FINISHED' && event.state !== 'CANCELED' && (
+                {!canEdit && event.userStatus === 'participant' && event.state === 'CREATED' && (
                   <button 
                     className="modern-btn event-action-btn leave-btn" 
                     onClick={handleLeaveEvent}

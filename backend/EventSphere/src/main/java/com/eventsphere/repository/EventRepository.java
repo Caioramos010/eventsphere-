@@ -45,4 +45,13 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query("SELECT e FROM Event e JOIN e.participants p WHERE p.user.id = :userId")
     List<Event> findEventsByParticipantUserId(@Param("userId") Long userId);
+
+    @Query("SELECT e FROM Event e WHERE e.owner.id = :ownerId AND e.state IN :states ORDER BY COALESCE(e.dateStart, e.dateFixedStart) ASC")
+    List<Event> findByOwnerIdAndStateIn(@Param("ownerId") Long ownerId, @Param("states") List<State> states);
+
+    @Query("SELECT DISTINCT e FROM Event e JOIN e.participants p WHERE p.user.id = :userId AND e.state IN :states")
+    List<Event> findByParticipantsUserIdAndStateIn(@Param("userId") Long userId, @Param("states") List<State> states);
+
+    @Query("SELECT e FROM Event e WHERE e.acess = :acess AND e.state IN :states ORDER BY COALESCE(e.dateStart, e.dateFixedStart) ASC")
+    List<Event> findByAcessAndStateIn(@Param("acess") Acess acess, @Param("states") List<State> states);
 }

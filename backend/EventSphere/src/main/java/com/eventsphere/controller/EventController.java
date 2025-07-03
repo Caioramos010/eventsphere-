@@ -46,14 +46,14 @@ public class EventController {
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<?>> getMyEvents() {
         User user = securityUtils.getAuthenticatedUser();
-        List<EventDTO> events = eventService.getMyEventsWithUserInfo(user.getId());
+        List<EventDTO> events = eventService.getAllMyEventsWithUserInfo(user.getId());
         return ResponseEntity.ok(ApiResponse.success("Meus eventos carregados com sucesso", events));
     }
 
     @GetMapping("/public")
     public ResponseEntity<ApiResponse<?>> getPublicEvents() {
         User user = securityUtils.getAuthenticatedUser();
-        List<EventDTO> events = eventService.getPublicEventsWithUserInfo(user.getId());
+        List<EventDTO> events = eventService.getPublicEventsWithUserInfo(user.getId(), null, null);
         return ResponseEntity.ok(ApiResponse.success("Eventos públicos carregados com sucesso", events));
     }
 
@@ -150,9 +150,11 @@ public class EventController {
         User user = securityUtils.getAuthenticatedUser();
         
         if (onlyPublic) {
-            return ResponseEntity.ok(ApiResponse.success(eventService.getNextPublicEventsWithUserInfo(user.getId())));
+            List<EventDTO> events = eventService.getNextPublicEventsWithUserInfo(user.getId());
+            return ResponseEntity.ok(ApiResponse.success("Próximos eventos públicos carregados com sucesso", events));
         } else if (onlyMine) {
-            return ResponseEntity.ok(ApiResponse.success(eventService.getNextEventsWithUserInfo(user.getId())));
+            List<EventDTO> events = eventService.getNextEventsWithUserInfo(user.getId());
+            return ResponseEntity.ok(ApiResponse.success("Meus próximos eventos carregados com sucesso", events));
         } else {
             List<EventDTO> myEvents = eventService.getNextEventsWithUserInfo(user.getId());
             List<EventDTO> publicEvents = eventService.getNextPublicEventsWithUserInfo(user.getId());
@@ -160,7 +162,7 @@ public class EventController {
             Set<EventDTO> allEvents = new HashSet<>(myEvents);
             allEvents.addAll(publicEvents);
             
-            return ResponseEntity.ok(ApiResponse.success(new ArrayList<>(allEvents)));
+            return ResponseEntity.ok(ApiResponse.success("Próximos eventos carregados com sucesso", new ArrayList<>(allEvents)));
         }
     }
 
@@ -206,6 +208,7 @@ public class EventController {
     @GetMapping("/all-my")
     public ResponseEntity<ApiResponse<?>> getAllMyEvents() {
         User user = securityUtils.getAuthenticatedUser();
+        // Chama um método específico que não aplica filtros de estado
         List<EventDTO> events = eventService.getAllMyEventsWithUserInfo(user.getId());
         return ResponseEntity.ok(ApiResponse.success("Todos os meus eventos carregados com sucesso", events));
     }

@@ -201,6 +201,12 @@ public class ParticipantController {
             User authUser = securityUtils.getAuthenticatedUser();
             Object result = participantService.markPresenceByToken(token, authUser.getId());
             return ResponseEntity.ok(ApiResponse.success("Presença marcada com sucesso", result));
+        } catch (IllegalStateException e) {
+            // Caso especial: participante já presente - não é um erro grave
+            if (e.getMessage().contains("já está presente")) {
+                return ResponseEntity.status(409).body(ApiResponse.error(e.getMessage()));
+            }
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         } catch (SecurityException e) {

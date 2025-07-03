@@ -138,6 +138,10 @@ const ParticipantService = {
         return { success: false, message: data.message || 'Token inválido' };
       }
     } catch (error) {
+      // Se o erro for de participante já presente, propaga sem modificar
+      if (error.isParticipantAlreadyPresent) {
+        throw error;
+      }
       return handleServiceError(error, 'Erro ao marcar presença por token');
     }
   },

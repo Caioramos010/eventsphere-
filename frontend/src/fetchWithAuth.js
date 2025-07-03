@@ -81,6 +81,14 @@ export async function fetchWithAuth(url, options = {}) {
     if (!response.ok) {
       const errorData = await response.clone().json().catch(() => null);
       const message = errorData?.message || `HTTP ${response.status}`;
+      
+      // Trata especificamente o status 409 (Conflict) para "participante já presente"
+      if (response.status === 409 && message.includes('já está presente')) {
+        const error = new Error(message);
+        error.isParticipantAlreadyPresent = true;
+        throw error;
+      }
+      
       throw new Error(message);
     }
 

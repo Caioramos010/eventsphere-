@@ -30,7 +30,6 @@ export default function Calendar({ events = [], onMonthChange }) {
   const daysInMonth = getDaysInMonth(selected.year, selected.month);
   const firstDay = getFirstDayOfWeek(selected.year, selected.month);
 
-  
   const weeks = [];
   let week = new Array(7).fill(null);
   let day = 1;
@@ -55,11 +54,24 @@ export default function Calendar({ events = [], onMonthChange }) {
 
   
   const eventMap = {};
+  
   events.forEach(ev => {
-    const dateStr = (ev.dateFixedStart || ev.dateStart || '').slice(0, 10);
+    const rawDate = ev.dateFixedStart || ev.dateStart || '';
+    let dateStr = '';
+    
+    if (rawDate) {
+      if (typeof rawDate === 'string') {
+        dateStr = rawDate.slice(0, 10);
+      } else if (Array.isArray(rawDate) && rawDate.length >= 3) {
+        const [year, month, day] = rawDate;
+        dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      }
+    }
+    
     if (dateStr) {
-      const d = new Date(dateStr);
-      if (d.getFullYear() === selected.year && d.getMonth() === selected.month) {
+      const d = new Date(dateStr + 'T12:00:00');
+      
+      if (!isNaN(d.getTime()) && d.getFullYear() === selected.year && d.getMonth() === selected.month) {
         const day = d.getDate();
         if (!eventMap[day]) eventMap[day] = [];
         eventMap[day].push(ev);
@@ -91,9 +103,10 @@ export default function Calendar({ events = [], onMonthChange }) {
   }
 
   function handleMonthMouseLeave(e) {
-    
     setTimeout(() => setIsMonthClickArea(false), 100);
-  }  function handleCloseExpanded() {
+  }
+
+  function handleCloseExpanded() {
     setSelected(s => ({ ...s, open: false }));
     setIsMonthClickArea(false);
   }
@@ -102,15 +115,28 @@ export default function Calendar({ events = [], onMonthChange }) {
     if (onMonthChange) onMonthChange(y, m);
   }
 
-  
   const formatDate = (dateString) => {
     if (!dateString) return 'Data não definida';
+    
     let d;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-      d = new Date(dateString + 'T12:00:00');
+    
+    if (Array.isArray(dateString) && dateString.length >= 3) {
+      const [year, month, day] = dateString;
+      d = new Date(year, month - 1, day);
+    } else if (typeof dateString === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        d = new Date(dateString + 'T12:00:00');
+      } else {
+        d = new Date(dateString);
+      }
     } else {
       d = new Date(dateString);
     }
+    
+    if (isNaN(d.getTime())) {
+      return 'Data inválida';
+    }
+    
     return d.toLocaleDateString('pt-BR');
   };
 
@@ -122,10 +148,8 @@ export default function Calendar({ events = [], onMonthChange }) {
     }
   }
 
-  
   function handleEventClick(event, e) {
     e.stopPropagation();
-    
     
     if (event.userStatus === 'owner' || event.userStatus === 'collaborator') {
       navigate(`/edit_event/${event.id}`);
@@ -134,12 +158,10 @@ export default function Calendar({ events = [], onMonthChange }) {
     }
   }
 
-  
   function handleCloseEventModal() {
     setSelectedDay(null);
     setDayEvents([]);
-  }  
-  function renderDayEventsModal() {
+  }  function renderDayEventsModal() {
     const modalContent = (
       <div className="calendar-events-modal" onClick={handleCloseEventModal}>
         <div className="calendar-events-container" onClick={e => e.stopPropagation()}>
@@ -155,8 +177,9 @@ export default function Calendar({ events = [], onMonthChange }) {
                 onClick={(e) => handleEventClick(event, e)}
               >
                 <div className="event-item-title">{event.name}</div>
-                <div className="event-item-date">{formatDate(event.dateFixedStart || event.dateStart)}</div>                <div className="event-item-info">
-                  {event.local && <div className="event-item-local">Local: {event.local}</div>}
+                <div className="event-item-date">{formatDate(event.dateFixedStart || event.dateStart)}</div>
+                <div className="event-item-info">
+                  {(event.localization || event.local) && <div className="event-item-local">Local: {event.localization || event.local}</div>}
                   {event.description && <div className="event-item-description">{event.description}</div>}
                 </div>
               </div>
@@ -166,13 +189,12 @@ export default function Calendar({ events = [], onMonthChange }) {
       </div>
     );
 
-    
     return createPortal(modalContent, document.body);
   }
+
   function renderExpanded() {
-    
     const currentYear = today.getFullYear();
-    const years = Array.from({ length: 11 }, (_, i) => currentYear + i); 
+    const years = Array.from({ length: 11 }, (_, i) => currentYear + i);
     
     const modalContent = (
       <div className="calendar-expanded-modal" onClick={handleCloseExpanded}>
@@ -193,7 +215,8 @@ export default function Calendar({ events = [], onMonthChange }) {
               >
                 {monthNames[m]}
               </div>
-            ))}            <div className="calendar-expanded-year-select-wrapper">
+            ))}
+            <div className="calendar-expanded-year-select-wrapper">
               <select
                 className="calendar-expanded-year-select"
                 value={selected.year}
@@ -209,9 +232,10 @@ export default function Calendar({ events = [], onMonthChange }) {
       </div>
     );
 
-    
     return createPortal(modalContent, document.body);
-  }return (
+  }
+
+  return (
     <div 
       className="calendar-container glass-card" 
       onClick={(e) => {
@@ -224,7 +248,6 @@ export default function Calendar({ events = [], onMonthChange }) {
         }
       }}
       onMouseLeave={() => {
-        
         setIsMonthClickArea(false);
       }}
       style={{ isolation: 'isolate' }}
@@ -234,7 +257,8 @@ export default function Calendar({ events = [], onMonthChange }) {
           <span>CALENDÁRIO</span>
         </div>
         <div className="calendar-header">
-          <button className="calendar-arrow" onClick={() => handleMonthChange(-1)}>{'<'}</button>          <span 
+          <button className="calendar-arrow" onClick={() => handleMonthChange(-1)}>{'<'}</button>
+          <span 
             className="calendar-month" 
             onClick={handleOpen} 
             onMouseEnter={handleMonthMouseEnter}
@@ -254,7 +278,8 @@ export default function Calendar({ events = [], onMonthChange }) {
         </thead>
         <tbody>
           {weeks.map((week, i) => (
-            <tr key={i}>              {week.map((d, j) => (
+            <tr key={i}>
+              {week.map((d, j) => (
                 <td 
                   key={j} 
                   className={d && eventMap[d] ? (eventMap[d].some(ev => ev.acess === 'PUBLIC') ? 'calendar-public' : 'calendar-private') : ''}

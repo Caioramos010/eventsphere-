@@ -37,46 +37,29 @@ function Main() {
       ]);
 
       if (myEventsResult.success) {
-        const validMyEvents = myEventsResult.events.filter(event => {
-          if (!event.id) {
-            console.warn('Evento ainda sem ID após processamento:', event);
-            return false;
-          }
-          return true;
-        });
-        
-        try {
-          localStorage.setItem('myEventsCache', JSON.stringify(validMyEvents));
-        } catch (e) {
-          console.error('Erro ao salvar cache de eventos:', e);
-        }
+        const validMyEvents = myEventsResult.events
+          .filter(event => {
+            if (!event.id) {
+              return false;
+            }
+            return true;
+          });
         
         setMyEvents(validMyEvents);
-      } else {
-        console.error('Error loading my events:', myEventsResult.message);
       }
 
       if (publicEventsResult.success) {
-        const validPublicEvents = publicEventsResult.events.filter(event => {
-          if (!event.id) {
-            console.warn('Evento público ainda sem ID após processamento:', event);
-            return false;
-          }
-          return true;
-        });
-        
-        try {
-          localStorage.setItem('publicEventsCache', JSON.stringify(validPublicEvents));
-        } catch (e) {
-          console.error('Erro ao salvar cache de eventos públicos:', e);
-        }
+        const validPublicEvents = publicEventsResult.events
+          .filter(event => {
+            if (!event.id) {
+              return false;
+            }
+            return true;
+          });
         
         setPublicEvents(validPublicEvents);
-      } else {
-        console.error('Error loading public events:', publicEventsResult.message);
       }
     } catch (error) {
-      console.error('Error loading events:', error);
       setError('Erro ao carregar eventos');
     } finally {
       setLoading(false);
@@ -88,7 +71,6 @@ function Main() {
       <Header />
       <div className="main-container">
         <div className="main-content">
-          {}
           <div className="page-header">
             <PageTitle
               icon={IoGridOutline}
@@ -98,10 +80,11 @@ function Main() {
               size="medium"
             />
           </div>
-            {}
           <StandardCard variant="glass" padding="large" className="main-top-card">
             <div className="main-top-section">
-              <Calendar events={[...myEvents, ...publicEvents]} />               <div className="actions-section">
+              <Calendar events={myEvents} />
+              
+              <div className="actions-section">
                 <h3 className="actions-title">Ações Rápidas</h3>                
                 <Link to="/event/enter">
                   <StandardButton
@@ -126,7 +109,7 @@ function Main() {
                 </Link>
               </div>
             </div>
-          </StandardCard>          {}
+          </StandardCard>
           <section className="events-section">
             <StandardCard variant="glass" padding="large">
               <div className="section-header">
@@ -145,20 +128,22 @@ function Main() {
                 {loading ? (
                   <div className="loading-message">Carregando...</div>
                 ) : error ? (
-                  <div className="status-message status-error">{error}</div>                ) : myEvents.length === 0 ? (
+                  <div className="status-message status-error">{error}</div>
+                ) : myEvents.length === 0 ? (
                   <div className="empty-message">Nenhum evento encontrado</div>
                 ) : (
                   myEvents.map(ev => (
                     <EventCard 
                       key={ev.id} 
-                      event={ev}                      type="primary" 
+                      event={ev}
+                      type="primary" 
                       linkTo={`/event/${ev.id}`} 
                     />
                   ))
                 )}
               </div>
             </StandardCard>
-          </section>          {}
+          </section>
           <section className="events-section">
             <StandardCard variant="glass" padding="large">
               <div className="section-header">
@@ -177,11 +162,13 @@ function Main() {
                 {loading ? (
                   <div className="loading-message">Carregando...</div>
                 ) : error ? (
-                  <div className="status-message status-error">{error}</div>                ) : publicEvents.length === 0 ? (
+                  <div className="status-message status-error">{error}</div>
+                ) : publicEvents.length === 0 ? (
                   <div className="empty-message">Nenhum evento público encontrado</div>
                 ) : (
                   publicEvents.map(ev => (
-                    <EventCard                      key={ev.id} 
+                    <EventCard
+                      key={ev.id} 
                       event={ev} 
                       type="secondary" 
                       linkTo={`/event/${ev.id}`} 

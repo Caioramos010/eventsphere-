@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserQRCodeReader } from '@zxing/library';
+import QrScanner from 'qr-scanner';
 
 const CameraDebugger = () => {
   const [cameras, setCameras] = useState([]);
@@ -11,11 +11,10 @@ const CameraDebugger = () => {
   
   const videoRef = useRef(null);
   const streamRef = useRef(null);
-  const readerRef = useRef(null);
+  const scannerRef = useRef(null);
 
   useEffect(() => {
     initializeCameras();
-    readerRef.current = new BrowserQRCodeReader();
     
     return () => {
       cleanup();
@@ -27,17 +26,31 @@ const CameraDebugger = () => {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+    
+    if (scannerRef.current) {
+      scannerRef.current.stop();
+      scannerRef.current.destroy();
+      scannerRef.current = null;
+    }
+    
     setIsStreaming(false);
   };
 
   const initializeCameras = async () => {
     try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      // Verifica se há suporte a câmera
+      const hasCamera = await QrScanner.hasCamera();
+      if (!hasCamera) {
+        setError('Nenhuma câmera encontrada neste dispositivo');
+        return;
+      }
+
+      // Lista câmeras disponíveis
+      const videoDevices = await QrScanner.listCameras(true);
       setCameras(videoDevices);
       
       if (videoDevices.length > 0) {
-        setSelectedCamera(videoDevices[0].deviceId);
+        setSelectedCamera(videoDevices[0].id);
       }
     } catch (err) {
       setError(`Erro ao listar câmeras: ${err.message}`);
@@ -49,33 +62,52 @@ const CameraDebugger = () => {
       setError(null);
       cleanup();
 
-      const constraints = {
-        video: {
-          deviceId: selectedCamera ? { exact: selectedCamera } : undefined,
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      };
+      if (!videoRef.current) {
+        setError('Elemento de vídeo não encontrado');
+        return;
+      }
 
-      streamRef.current = await navigator.mediaDevices.getUserMedia(constraints);
-      videoRef.current.srcObject = streamRef.current;
-      
-      await videoRef.current.play();
+      // Cria novo scanner
+      scannerRef.current = new QrScanner(
+        videoRef.current,
+        result => {
+          console.log('QR Code detectado:', result.data);
+          setScanResult({
+            text: result.data,
+            timestamp: new Date().toLocaleTimeString()
+          });
+        },
+        {
+          returnDetailedScanResult: true,
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+          preferredCamera: selectedCamera,
+          maxScansPerSecond: 1 // Limite para debug
+        }
+      );
+
+      // Inicia o scanner
+      await scannerRef.current.start();
       setIsStreaming(true);
 
-      
-      const track = streamRef.current.getVideoTracks()[0];
-      const settings = track.getSettings();
-      const capabilities = track.getCapabilities();
-      
-      setStreamInfo({
-        settings,
-        capabilities,
-        label: track.label
-      });
-
-      
-      startScanning();
+      // Obtém informações do stream
+      setTimeout(() => {
+        if (videoRef.current && videoRef.current.srcObject) {
+          streamRef.current = videoRef.current.srcObject;
+          const track = streamRef.current.getVideoTracks()[0];
+          
+          if (track) {
+            const settings = track.getSettings();
+            const capabilities = track.getCapabilities();
+            
+            setStreamInfo({
+              settings,
+              capabilities,
+              label: track.label
+            });
+          }
+        }
+      }, 1000);
 
     } catch (err) {
       setError(`Erro ao iniciar stream: ${err.message}`);
@@ -83,34 +115,13 @@ const CameraDebugger = () => {
   };
 
   const startScanning = () => {
-    const scanFrame = async () => {
-      if (!videoRef.current || !readerRef.current || !isStreaming) return;
-
-      try {
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        
-        canvas.width = videoRef.current.videoWidth || 640;
-        canvas.height = videoRef.current.videoHeight || 480;
-        
-        context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        
-        const result = await readerRef.current.decodeFromImageElement(canvas);
-        
-        if (result && result.text) {
-          setScanResult({
-            text: result.text,
-            timestamp: new Date().toLocaleTimeString()
-          });
-        }
-      } catch (err) {
-        
-      }
-    };
-
-    const interval = setInterval(scanFrame, 1000);
+    if (!scannerRef.current || !videoRef.current) {
+      setError('Scanner não inicializado');
+      return;
+    }
     
-    return () => clearInterval(interval);
+    // Ao usar qr-scanner, o escaneamento já é contínuo
+    // Não precisamos implementar um loop manual
   };
 
   return (
@@ -129,14 +140,14 @@ const CameraDebugger = () => {
       <div style={{ marginBottom: '20px' }}>
         <h3>Câmeras Detectadas: {cameras.length}</h3>
         {cameras.length > 0 ? (
-          <select 
+          <          select 
             value={selectedCamera} 
             onChange={(e) => setSelectedCamera(e.target.value)}
             style={{ padding: '10px', marginRight: '10px', borderRadius: '5px' }}
           >
             {cameras.map((camera, index) => (
-              <option key={camera.deviceId} value={camera.deviceId}>
-                Câmera {index + 1}: {camera.label || `Dispositivo ${camera.deviceId.substr(0, 8)}...`}
+              <option key={camera.id} value={camera.id}>
+                Câmera {index + 1}: {camera.label || `Dispositivo ${index}`}
               </option>
             ))}
           </select>

@@ -6,6 +6,7 @@ export { default as FormField } from './FormField';
 export { default as PasswordField } from './PasswordField';
 export { default as Button } from './Button';
 export { default as Message } from './Message';
+export { default as LoadingSpinner } from './LoadingSpinner';
 
 export { default as Header } from './Header';
 export { default as Footer } from './Footer';

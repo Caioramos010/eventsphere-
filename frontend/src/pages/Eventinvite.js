@@ -251,7 +251,7 @@ const EventInvite = () => {
                     </button>
                   </div>
                   
-                  <div className="action-buttons">
+                  <div className="action-buttons-link">
                     <StandardButton
                       variant={copySuccess ? "success" : "secondary"}
                       size="medium"

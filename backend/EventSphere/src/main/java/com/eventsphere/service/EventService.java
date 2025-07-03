@@ -383,20 +383,108 @@ public class EventService {
         return eventMapper.toDTOWithUserContext(event, userId);
     }
 
-    public List<EventDTO> getMyEventsWithUserInfo(Long userId) {
+    public List<EventDTO> getMyEventsWithUserInfo(Long userId, String state, String sort) {
+        logger.info("Buscando eventos para usuário: " + userId + ", state: " + state + ", sort: " + sort);
+        
+        List<Event> ownedEvents = eventRepository.findByOwnerId(userId);
+        List<Event> participantEvents = eventRepository.findEventsByParticipantUserId(userId);
+        
+        logger.info("Eventos próprios encontrados: " + ownedEvents.size());
+        logger.info("Eventos como participante encontrados: " + participantEvents.size());
+        
+        Set<Event> allEvents = new HashSet<>();
+        allEvents.addAll(ownedEvents);
+        allEvents.addAll(participantEvents);
+        
+        List<Event> filteredEvents = new ArrayList<>(allEvents);
+        logger.info("Total de eventos únicos: " + filteredEvents.size());
+        
+        
+        if (state != null && !state.isEmpty() && !"all".equalsIgnoreCase(state)) {
+            try {
+                State stateEnum = State.valueOf(state.toUpperCase());
+                logger.info("Aplicando filtro de estado: " + stateEnum);
+                
+                filteredEvents = filteredEvents.stream()
+                    .filter(event -> {
+                        boolean matches = event.getState() == stateEnum;
+                        logger.info("Evento " + event.getId() + " (" + event.getName() + ") - Estado: " + event.getState() + ", Corresponde ao filtro: " + matches);
+                        return matches;
+                    })
+                    .collect(Collectors.toList());
+                
+                logger.info("Eventos após filtro de estado: " + filteredEvents.size());
+            } catch (IllegalArgumentException e) {
+                logger.warning("Invalid state parameter: " + state);
+            }
+        }
+        
+        
+        if (sort != null && !sort.isEmpty()) {
+            logger.info("Aplicando ordenação: " + sort);
+            if ("date_asc".equalsIgnoreCase(sort)) {
+                filteredEvents.sort(Comparator.comparing(event -> 
+                    LocalDateTime.of(event.getDateFixedStart(), event.getTimeFixedStart())));
+            } else if ("date_desc".equalsIgnoreCase(sort)) {
+                filteredEvents.sort((event1, event2) -> 
+                    LocalDateTime.of(event2.getDateFixedStart(), event2.getTimeFixedStart())
+                        .compareTo(LocalDateTime.of(event1.getDateFixedStart(), event1.getTimeFixedStart())));
+            }
+        }
+        
+        logger.info("Retornando " + filteredEvents.size() + " eventos após filtragem e ordenação");
+        return eventMapper.toDTOListWithUserContext(filteredEvents, userId);
+    }
+    
+    public List<EventDTO> getAllMyEventsWithUserInfo(Long userId) {
+        
         List<Event> ownedEvents = eventRepository.findByOwnerId(userId);
         List<Event> participantEvents = eventRepository.findEventsByParticipantUserId(userId);
         Set<Event> allEvents = new HashSet<>();
         allEvents.addAll(ownedEvents);
         allEvents.addAll(participantEvents);
         
-        return eventMapper.toDTOListWithUserContext(new ArrayList<>(allEvents), userId);
+        
+        List<Event> filteredEvents = allEvents.stream()
+            .filter(event -> event.getState() != State.FINISHED && event.getState() != State.CANCELED)
+            .collect(Collectors.toList());
+        
+        return eventMapper.toDTOListWithUserContext(filteredEvents, userId);
     }
     
-    public List<EventDTO> getPublicEventsWithUserInfo(Long userId) {
+    public List<EventDTO> getPublicEventsWithUserInfo(Long userId, String state, String sort) {
         List<Event> events = eventRepository.findByAcess(Acess.PUBLIC);
         if (events.isEmpty()) {
             return new ArrayList<>();
+        }
+        
+        
+        events = events.stream()
+            .filter(event -> event.getState() != State.FINISHED && event.getState() != State.CANCELED)
+            .collect(Collectors.toList());
+        
+        
+        if (state != null && !state.isEmpty()) {
+            try {
+                State stateEnum = State.valueOf(state.toUpperCase());
+                events = events.stream()
+                    .filter(event -> event.getState() == stateEnum)
+                    .collect(Collectors.toList());
+            } catch (IllegalArgumentException e) {
+                logger.warning("Invalid state parameter: " + state);
+            }
+        }
+        
+        
+        if (sort != null && !sort.isEmpty()) {
+            if ("date_asc".equalsIgnoreCase(sort)) {
+                events.sort(Comparator.comparing(event -> 
+                    LocalDateTime.of(event.getDateFixedStart(), event.getTimeFixedStart())));
+            } else if ("date_desc".equalsIgnoreCase(sort)) {
+                events.sort((event1, event2) -> 
+                    LocalDateTime.of(event2.getDateFixedStart(), event2.getTimeFixedStart())
+                        .compareTo(LocalDateTime.of(event1.getDateFixedStart(), event1.getTimeFixedStart())));
+            }
         }
         
         return eventMapper.toDTOListWithUserContext(events, userId);

@@ -399,7 +399,18 @@ public class ParticipantService {
         }
         
         if (participant.getCurrentStatus() == ParticipantStatus.PRESENT) {
-            throw new IllegalArgumentException("O participante já está presente");
+            // Este é um caso esperado, não é um erro real - apenas retorna informação
+            Map<String, Object> participantData = new HashMap<>();
+            participantData.put("id", participant.getId());
+            participantData.put("userId", participant.getUser().getId());
+            participantData.put("status", participant.getCurrentStatus().toString());
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("name", participant.getUser().getName());
+            userData.put("email", participant.getUser().getEmail());
+            participantData.put("user", userData);
+            
+            // Cria uma exceção especial que será tratada de forma diferente no frontend
+            throw new IllegalStateException("O participante já está presente");
         }
         
         participant.setCurrentStatus(ParticipantStatus.PRESENT);

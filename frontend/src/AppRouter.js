@@ -8,7 +8,7 @@ import JoinEvent from './pages/JoinEvent';
 import UserProfile from './pages/UserProfile';
 import EditEvent from './pages/EditEvent';
 import EventDetails from './pages/EventDetails';
-import EventInvite from './pages/EventInvite';
+import EventInvite from './pages/Eventinvite';
 import QRScanner from './pages/QRScanner';
 import AllEvents from './pages/AllEvents';
 import ProtectedRoute from './components/ProtectedRoute';

@@ -11,7 +11,10 @@ const HTTP_ERROR_CODES = {
 };
 
 export const handleServiceError = (error, context = '') => {
-  console.error(`Error in ${context}:`, error);
+  // Não loga erro no console se for um caso de participante já presente
+  if (!(error.isParticipantAlreadyPresent || (error.message && error.message.includes('já está presente')))) {
+    console.error(`Error in ${context}:`, error);
+  }
   
   let message = 'Erro inesperado';
   let shouldRedirect = false;

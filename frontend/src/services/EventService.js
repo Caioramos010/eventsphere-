@@ -6,11 +6,14 @@ const EventService = {
   
   async getPublicEvents() {
     try {
-      const response = await get(API_CONFIG.ENDPOINTS.PUBLIC_EVENTS);
+      // O backend já filtra eventos ativos e ordena por data por padrão
+      const url = buildUrl(API_CONFIG.ENDPOINTS.PUBLIC_EVENTS);
+      
+      const response = await get(url);
       const data = await response.json();
       
       const events = (data.data || data || []).map(event => {
-        
+        // Verificação de eventos sem ID para debug
         if (!event.id) {
           console.warn('Evento sem ID encontrado:', event);
         }
@@ -27,7 +30,10 @@ const EventService = {
   
   async getMyEvents() {
     try {
-      const response = await get(API_CONFIG.ENDPOINTS.MY_EVENTS);
+      // O backend já filtra eventos ativos e ordena por data por padrão
+      const url = buildUrl(API_CONFIG.ENDPOINTS.MY_EVENTS);
+      
+      const response = await get(url);
       const data = await response.json();
       
       const events = (data.data || data || []).map(event => {
@@ -81,26 +87,7 @@ const EventService = {
       if (eventId.startsWith('temp_') && !forceFresh) {
         
         
-        try {
-          const myEventsCache = localStorage.getItem('myEventsCache');
-          const publicEventsCache = localStorage.getItem('publicEventsCache');
-          
-          let events = [];
-          if (myEventsCache) {
-            events = events.concat(JSON.parse(myEventsCache));
-          }
-          if (publicEventsCache) {
-            events = events.concat(JSON.parse(publicEventsCache));
-          }
-          
-          const event = events.find(e => e.id === eventId);
-          
-          if (event) {
-            return { success: true, event };
-          } 
-        } catch (cacheError) {
-          console.error('Erro ao buscar evento no cache:', cacheError);
-        }
+        return { success: false, message: 'Evento temporário não encontrado' };
       }
       
       
@@ -473,7 +460,10 @@ const EventService = {
   
   async getNextEvents() {
     try {
-      const response = await get(API_CONFIG.ENDPOINTS.MY_EVENTS);
+      // O backend já filtra eventos ativos e ordena por data por padrão
+      const url = buildUrl(API_CONFIG.ENDPOINTS.MY_EVENTS);
+      
+      const response = await get(url);
       const data = await response.json();
       const events = (data.data || data || []).map(event => {
         if (!event.id) {
@@ -491,7 +481,10 @@ const EventService = {
   
   async getNextPublicEvents() {
     try {
-      const response = await get(API_CONFIG.ENDPOINTS.PUBLIC_EVENTS);
+      // O backend já filtra eventos ativos e ordena por data por padrão
+      const url = buildUrl(API_CONFIG.ENDPOINTS.PUBLIC_EVENTS);
+      
+      const response = await get(url);
       const data = await response.json();
       const events = (data.data || data || []).map(event => {
         if (!event.id) {

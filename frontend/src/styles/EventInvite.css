@@ -133,7 +133,7 @@
   transform: scale(1.05);
 }
 
-.action-buttons {
+.action-buttons-link {
   display: flex;
   gap: 12px;
   justify-content: center;
@@ -306,7 +306,7 @@
     font-size: 0.8rem;
   }
   
-  .action-buttons {
+  .action-buttons-link {
     flex-direction: column;
   }
   

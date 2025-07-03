@@ -1,4 +1,3 @@
-
 .qr-scanner-container {
   min-height: calc(100vh - 140px);
   background: linear-gradient(135deg, #423742 0%, #a099a0 50%, #423742 100%);
@@ -186,6 +185,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.scan-overlay-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.camera-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .scan-frame {
@@ -540,6 +556,64 @@
   opacity: 0.8;
 }
 
+
+/* Instruções de escaneamento */
+.scan-instructions {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: white;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.scan-instructions p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Melhorias nos botões de ação */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.debug-info {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+  padding: 5px;
+  color: white;
+  font-size: 12px;
+  z-index: 20;
+}
+
+.debug-info summary {
+  cursor: pointer;
+  padding: 3px;
+  font-weight: bold;
+  color: #4a9eff;
+}
+
+.debug-details {
+  padding: 5px;
+  font-size: 11px;
+}
+
+.debug-details p {
+  margin: 2px 0;
+}
 
 @media (max-width: 768px) {
   .qr-scanner-container {
