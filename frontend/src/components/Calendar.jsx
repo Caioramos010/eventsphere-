@@ -35,15 +35,7 @@ export default function Calendar({ events = [], onMonthChange }) {
   let day = 1;
   for (let i = 0; i < firstDay; i++) week[i] = null;
   for (let i = firstDay; day <= daysInMonth; i++) {
-    const isPastDay =
-      selected.year < today.getFullYear() ||
-      (selected.year === today.getFullYear() && selected.month < today.getMonth()) ||
-      (selected.year === today.getFullYear() && selected.month === today.getMonth() && day < today.getDate());
-    if (isPastDay) {
-      week[i] = null;
-    } else {
-      week[i] = day;
-    }
+    week[i] = day;
     day++;
     if (i === 6 || day > daysInMonth) {
       weeks.push(week);
@@ -150,12 +142,7 @@ export default function Calendar({ events = [], onMonthChange }) {
 
   function handleEventClick(event, e) {
     e.stopPropagation();
-    
-    if (event.userStatus === 'owner' || event.userStatus === 'collaborator') {
-      navigate(`/edit_event/${event.id}`);
-    } else {
-      navigate(`/event/${event.id}`);
-    }
+    navigate(`/event/${event.id}`);
   }
 
   function handleCloseEventModal() {
@@ -279,16 +266,33 @@ export default function Calendar({ events = [], onMonthChange }) {
         <tbody>
           {weeks.map((week, i) => (
             <tr key={i}>
-              {week.map((d, j) => (
-                <td 
-                  key={j} 
-                  className={d && eventMap[d] ? (eventMap[d].some(ev => ev.acess === 'PUBLIC') ? 'calendar-public' : 'calendar-private') : ''}
-                  onClick={() => handleDayClick(d)}
-                >
-                  {d}
-                  {d && eventMap[d] && <span className="calendar-dot" title={eventMap[d].map(ev => ev.name).join(', ')}></span>}
-                </td>
-              ))}
+              {week.map((d, j) => {
+                const isPastDay = d && (
+                  selected.year < today.getFullYear() ||
+                  (selected.year === today.getFullYear() && selected.month < today.getMonth()) ||
+                  (selected.year === today.getFullYear() && selected.month === today.getMonth() && d < today.getDate())
+                );
+                
+                let className = '';
+                if (d && eventMap[d]) {
+                  className = eventMap[d].some(ev => ev.acess === 'PUBLIC') ? 'calendar-public' : 'calendar-private';
+                }
+                if (isPastDay) {
+                  className += ' calendar-past-day';
+                }
+                
+                return (
+                  <td 
+                    key={j} 
+                    className={className}
+                    onClick={() => handleDayClick(d)}
+                    style={isPastDay ? { opacity: 0.6 } : {}}
+                  >
+                    {d}
+                    {d && eventMap[d] && <span className="calendar-dot" title={eventMap[d].map(ev => ev.name).join(', ')}></span>}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>
