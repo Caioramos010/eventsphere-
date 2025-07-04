@@ -137,7 +137,14 @@ const AuthService = {
       const currentUser = this.getCurrentUser();
       if (currentUser) {
         const updatedUser = { ...currentUser, ...updatedUserData };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        // Nunca salva a foto no localStorage - sempre busca do backend
+        // Isso evita QuotaExceededError e mantém os dados sincronizados
+        const userWithoutPhoto = { ...updatedUser };
+        delete userWithoutPhoto.photo;
+        localStorage.setItem('user', JSON.stringify(userWithoutPhoto));
+        
+        // Retorna o usuário com foto para uso imediato na UI
         return { success: true, user: updatedUser };
       }
       return { success: false, message: 'Usuário não encontrado no localStorage' };

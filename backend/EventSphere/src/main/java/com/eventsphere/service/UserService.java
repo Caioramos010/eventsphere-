@@ -175,6 +175,12 @@ public class UserService {
         getUser(userID).setPhoto(newPhoto);
         return userRepository.save(getUser(userID));
     }
+
+    public User removePhoto(Long userID) {
+        User user = getUser(userID);
+        user.setPhoto(null);
+        return userRepository.save(user);
+    }
     public User updateUsername(Long userID, String newUsername) {
         getUser(userID).setUsername(newUsername);
         return userRepository.save(getUser(userID));

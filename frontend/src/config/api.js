@@ -9,6 +9,8 @@ const API_CONFIG = {
     USER_UPDATE_PASSWORD: '/api/user/update-passowrd',
     USER_DELETE: '/api/user/delete',
     USER_PROFILE: '/api/user/get',
+    USER_PHOTO_REMOVE: '/api/user/remove-photo',
+    USER_PHOTO_REMOVE: '/api/user/remove-photo',
     
     EVENT_CREATE: '/api/event/register',
     EVENT_EDIT: '/api/event/{eventID}',

@@ -104,12 +104,46 @@ export default function UserProfile() {
     }
   }
 
-  function handleRemovePhoto() {
-    setPhotoFile(null);
-    setPhotoPreview(user?.photo || '');
-    if (fileInputRef.current) fileInputRef.current.value = '';
+  async function handleRemovePhoto() {
+    if (!user?.photo) {
+      setPhotoFile(null);
+      setPhotoPreview('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setError('');
+      setSuccess('');
+      return;
+    }
+
+    const confirmed = await dialog.confirm('Tem certeza que deseja remover sua foto de perfil?');
+    if (!confirmed) return;
+
+    setLoading(true);
     setError('');
     setSuccess('');
+    
+    try {
+      const result = await UserService.removeUserPhoto();
+      if (result.success) {
+        setSuccess('Foto removida com sucesso!');
+        const updatedUser = { ...user, photo: null };
+        setUser(updatedUser);
+        AuthService.updateCurrentUser(updatedUser);
+        setPhotoFile(null);
+        setPhotoPreview('');
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        
+        // Recarrega a página após um breve delay para mostrar a mensagem
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        setError(result.message || 'Erro ao remover foto');
+      }
+    } catch (err) {
+      setError('Erro ao conectar com o servidor');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleUploadPhoto() {
@@ -132,6 +166,11 @@ export default function UserProfile() {
         AuthService.updateCurrentUser(updatedUser);
         setPhotoFile(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
+        
+        // Recarrega a página após um breve delay para mostrar a mensagem
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       } else {
         setError(result.message || 'Erro ao fazer upload da foto');
       }
@@ -163,6 +202,11 @@ export default function UserProfile() {
         const updatedUser = { ...user, email: form.email };
         setUser(updatedUser);
         AuthService.updateCurrentUser(updatedUser);
+        
+        // Recarrega a página após um breve delay para mostrar a mensagem
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       } else {
         setError(result.message || 'Erro ao atualizar email');
       }
@@ -186,9 +230,11 @@ export default function UserProfile() {
       const result = await UserService.updateUsername(form.username);
       if (result.success) {
         setSuccess(result.message || 'Login atualizado com sucesso!');
-        const updatedUser = { ...user, username: form.username };
-        setUser(updatedUser);
-        AuthService.updateCurrentUser(updatedUser);
+        // Aguarda um pouco para mostrar a mensagem e depois redireciona
+        setTimeout(() => {
+          AuthService.logout();
+          navigate('/login');
+        }, 2000);
       } else {
         setError(result.message || 'Erro ao atualizar login');
       }
@@ -231,6 +277,11 @@ export default function UserProfile() {
           newPassword: '',
           confirmPassword: '',
         }));
+        // Aguarda um pouco para mostrar a mensagem e depois redireciona
+        setTimeout(() => {
+          AuthService.logout();
+          navigate('/login');
+        }, 2000);
       } else {
         setError(result.message || 'Erro ao atualizar senha');
       }
@@ -343,20 +394,20 @@ export default function UserProfile() {
                         Nenhuma foto
                       </div>
                     )}
-                    <label htmlFor="photo-input" className="photo-upload-btn">
-                      <IoCamera />
-                    </label>
-                    {(photoPreview || photoFile) && (
-                      <button
-                        className="photo-remove-btn"
-                        onClick={handleRemovePhoto}
-                        disabled={loading}
-                        title="Remover foto"
-                      >
-                        <IoTrash />
-                      </button>
-                    )}
                   </div>
+                  <label htmlFor="photo-input" className="photo-upload-btn">
+                    <IoCamera />
+                  </label>
+                  {(photoPreview || photoFile) && (
+                    <button
+                      className="photo-remove-btn"
+                      onClick={handleRemovePhoto}
+                      disabled={loading}
+                      title="Remover foto"
+                    >
+                      <IoTrash />
+                    </button>
+                  )}
                   <input
                     type="file"
                     id="photo-input"

@@ -59,6 +59,13 @@ public class UserController {
         User user = securityUtils.getAuthenticatedUser();
         userService.updatePhoto(user.getId(), newPhoto);
         return ResponseEntity.ok(ApiResponse.success("Foto atualizada com sucesso", null));
+    }
+
+    @DeleteMapping("/remove-photo")
+    public ResponseEntity<ApiResponse<?>> removeUserPhoto() {
+        User user = securityUtils.getAuthenticatedUser();
+        userService.removePhoto(user.getId());
+        return ResponseEntity.ok(responseMapper.success("Foto removida com sucesso"));
     }    @DeleteMapping("/delete")
     public ResponseEntity<ApiResponse<?>> deleteUser(@RequestParam String password) {
         User user = securityUtils.getAuthenticatedUser();

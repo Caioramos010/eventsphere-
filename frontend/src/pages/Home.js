@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import '../styles/home-fixed.css';
+import '../styles/home.css';
 import CalendarAnimation from '../components/Animation';
 import { StandardButton } from '../components';
 import { IoCalendarOutline, IoStatsChartOutline, IoPersonAddOutline, IoLogInOutline, IoPersonOutline } from 'react-icons/io5';
@@ -92,7 +92,7 @@ function Home() {
       </section>
 
       <section className="features-section" ref={featuresRef}>
-        <h2 className="section-title">Tudo o que você precisa para eventos incríveis</h2>
+        <h2 className="section-title-home">Tudo o que você precisa para eventos incríveis</h2>
         
         <div className="features-grid">
           <div className="feature-card">

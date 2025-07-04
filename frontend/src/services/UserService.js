@@ -35,8 +35,8 @@ const UserService = {
       const data = await response.json();
       
       if (data.success || response.ok) {
-        AuthService.updateCurrentUser({ username: newUsername });
-        return { success: true, message: data.message || 'Login atualizado com sucesso' };
+        AuthService.logout();
+        return { success: true, message: data.message || 'Login atualizado com sucesso. Faça login novamente.' };
       } else {
         return { success: false, message: data.message || 'Erro ao atualizar login' };
       }
@@ -52,7 +52,8 @@ const UserService = {
       const data = await response.json();
       
       if (data.success || response.ok) {
-        return { success: true, message: data.message || 'Senha atualizada com sucesso' };
+        AuthService.logout();
+        return { success: true, message: data.message || 'Senha atualizada com sucesso. Faça login novamente.' };
       } else {
         return { success: false, message: data.message || 'Erro ao atualizar senha' };
       }
@@ -198,7 +199,32 @@ const UserService = {
       console.error('Erro ao buscar perfil do usuário:', error);
       throw error;
     }
-  }
+  },
+
+  async removeUserPhoto() {
+    try {
+      const response = await fetchWithAuth(buildUrl(API_CONFIG.ENDPOINTS.USER_PHOTO_REMOVE), {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      
+      if (data.success || response.ok) {
+        const currentUser = AuthService.getCurrentUser();
+        if (currentUser) {
+          AuthService.updateCurrentUser({ ...currentUser, photo: null });
+        }
+        
+        return { 
+          success: true, 
+          message: data.message || 'Foto removida com sucesso'
+        };
+      } else {
+        return { success: false, message: data.message || 'Erro ao remover foto' };
+      }
+    } catch (error) {
+      return handleServiceError(error, 'UserService.removeUserPhoto');
+    }
+  },
 };
 
 export default UserService;

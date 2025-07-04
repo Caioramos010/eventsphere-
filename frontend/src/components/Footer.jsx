@@ -6,7 +6,7 @@ import logoFooter from '../images/logo-footer.png';
 const Footer = () => (
   <footer className="main-footer">
     <div className="main-footer-left">
-      <span className="main-footer-menu">INICIO<br/>EVENTOS<br/>RELATÓRIOS</span>
+      <span className="main-footer-menu">INICIO<br/>EVENTOS</span>
     </div>
     <div className="main-footer-center">
       <img src={logoFooter} alt="EventSphere" className="main-footer-logo" />

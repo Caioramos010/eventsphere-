@@ -11,7 +11,7 @@ const CalendarAnimation = () => {
     if (!isHovered) {
       const interval = setInterval(() => {
         setStep((prevStep) => (prevStep + 1) % 3);
-      }, 4000);
+      }, 2500);
       return () => clearInterval(interval);
     }
   }, [isHovered]);  return (

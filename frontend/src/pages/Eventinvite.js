@@ -27,11 +27,11 @@ const EventInvite = () => {
           return;
         }
         setEvent(eventResult.event);
-        // Chama apenas o endpoint de link de convite
+        
         const inviteResult = await EventService.generateInviteLink(id);
         if (inviteResult.success) {
           setInviteUrl(inviteResult.inviteUrl);
-          // Usa o código já existente do evento
+          
           setEventCode(eventResult.event.inviteCode || '');
         } else {
           setError(inviteResult.message || 'Erro ao gerar link de convite');
