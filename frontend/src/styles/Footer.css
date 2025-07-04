@@ -30,6 +30,10 @@ html, body {
   flex: 1;
 }
 .main-footer-menu {
+  display: flex;
+  flex-direction: column;
+}
+.footer-link{
   line-height: 1.5;
   color: var(--color-text-white);
   font-size: var(--font-size-sm);
