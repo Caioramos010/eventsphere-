@@ -15,9 +15,10 @@ services:
       - ./mysql-init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
+      interval: 30s
+      timeout: 10s
       retries: 5
+      start_period: 80s
 
   backend:
     build: ./backend/EventSphere
@@ -33,6 +34,7 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+        restart: true
     volumes:
       - ./backend/EventSphere/uploads:/app/uploads
 

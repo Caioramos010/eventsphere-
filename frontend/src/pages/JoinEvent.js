@@ -21,10 +21,10 @@ export default function JoinEvent() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Aguardar o UserContext terminar de carregar
+    
     if (loading) return;
 
-    // Se não há usuário autenticado, redirecionar para login
+    
     if (!user) {
       if (token) {
         navigate(`/login?token=${token}`);
@@ -34,10 +34,13 @@ export default function JoinEvent() {
       return;
     }
 
-    // Se há token, validar convite; senão, mostrar formulário de código
+    
     if (token) {
       setValidating(true);
-      validateInviteToken(token);
+      
+      setTimeout(() => {
+        validateInviteToken(token);
+      }, 500);
     } else {
       setShowCodeForm(true);
     }
@@ -158,6 +161,26 @@ export default function JoinEvent() {
     }
     validateEventCode(eventCode.trim());
   };
+
+  
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <div className="page-container">
+          <div className="page-main">
+            <div className="glass-card">
+              <div className="loading-message">
+                <div className="loading-spinner" />
+                Carregando...
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   if (validating) {
     return (
@@ -369,7 +392,7 @@ export default function JoinEvent() {
 
                       <div className="join-info">
                         <p>
-                          <strong>📋 O que acontece depois:</strong>
+                          <strong>O que acontece depois:</strong>
                         </p>
                         <ul>
                           <li>Você será adicionado à lista de participantes</li>

@@ -46,7 +46,7 @@ public class EventController {
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<?>> getMyEvents() {
         User user = securityUtils.getAuthenticatedUser();
-        List<EventDTO> events = eventService.getAllMyEventsWithUserInfo(user.getId());
+        List<EventDTO> events = eventService.getMyActiveEventsWithUserInfo(user.getId());
         return ResponseEntity.ok(ApiResponse.success("Meus eventos carregados com sucesso", events));
     }
 

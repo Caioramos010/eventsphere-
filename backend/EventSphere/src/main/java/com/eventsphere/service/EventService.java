@@ -222,7 +222,33 @@ public class EventService {
         event.setState(State.ACTIVE);
         event.setDateStart(LocalDate.now());
         event.setTimeStart(LocalTime.now());
-        return eventRepository.save(event);
+        Event savedEvent = eventRepository.save(event);
+        
+        
+        try {
+            EventParticipant ownerParticipant = participantRepository.findByEventIdAndUserId(eventID, event.getOwner().getId());
+            if (ownerParticipant != null && ownerParticipant.getCurrentStatus() != ParticipantStatus.PRESENT) {
+                
+                ParticipantHistory history = new ParticipantHistory();
+                history.setParticipant(ownerParticipant);
+                history.setStatus(ownerParticipant.getCurrentStatus());
+                history.setChangeTimestamp(LocalDateTime.now());
+                
+                if (ownerParticipant.getParticipantHistory() == null) {
+                    ownerParticipant.setParticipantHistory(new ArrayList<>());
+                }
+                ownerParticipant.getParticipantHistory().add(history);
+                
+                
+                ownerParticipant.setCurrentStatus(ParticipantStatus.PRESENT);
+                participantRepository.save(ownerParticipant);
+            }
+        } catch (Exception e) {
+            
+            logger.warning("Erro ao marcar dono como presente no evento " + eventID + ": " + e.getMessage());
+        }
+        
+        return savedEvent;
     }
 
     public Event finishEvent(Long eventID, Long userId) {
@@ -445,10 +471,8 @@ public class EventService {
         allEvents.addAll(participantEvents);
         
         
-        List<Event> filteredEvents = allEvents.stream()
-            .filter(event -> event.getState() != State.FINISHED && event.getState() != State.CANCELED)
-            .collect(Collectors.toList());
-        
+        List<Event> filteredEvents = allEvents.stream().collect(Collectors.toList());
+
         return eventMapper.toDTOListWithUserContext(filteredEvents, userId);
     }
     
@@ -640,5 +664,18 @@ public class EventService {
             logger.info("Generated invite code for event " + eventId + ": " + inviteCode);
         }
         return event.getInviteCode();
+    }
+
+    public List<EventDTO> getMyActiveEventsWithUserInfo(Long userId) {
+        List<Event> ownedEvents = eventRepository.findByOwnerId(userId);
+        List<Event> participantEvents = eventRepository.findEventsByParticipantUserId(userId);
+        Set<Event> allEvents = new HashSet<>();
+        allEvents.addAll(ownedEvents);
+        allEvents.addAll(participantEvents);
+        List<Event> filteredEvents = allEvents.stream()
+            .filter(event -> event.getState() != State.FINISHED && event.getState() != State.CANCELED)
+            .collect(Collectors.toList());
+        
+        return eventMapper.toDTOListWithUserContext(filteredEvents, userId);
     }
 }

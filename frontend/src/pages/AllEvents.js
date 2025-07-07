@@ -130,31 +130,6 @@ const AllEvents = () => {
                 className="search-input"
               />
             </div>
-
-            <div className="filter-buttons">
-              <StandardButton
-                variant={filter === 'all' ? 'primary' : 'secondary'}
-                size="small"
-                onClick={() => setFilter('all')}
-              >
-                Todos ({events.length})
-              </StandardButton>
-              <StandardButton
-                variant={filter === 'my-events' ? 'primary' : 'secondary'}
-                size="small"
-                onClick={() => setFilter('my-events')}
-              >
-                Criados ({events.filter(e => e.source === 'created').length})
-              </StandardButton>
-              <StandardButton
-                variant={filter === 'participating' ? 'primary' : 'secondary'}
-                size="small"
-                onClick={() => setFilter('participating')}
-              >
-                Participando ({events.filter(e => e.source === 'participating').length})
-              </StandardButton>
-            </div>
-
             <div className="view-controls">
               <StandardButton
                 variant={viewMode === 'grid' ? 'info' : 'secondary'}

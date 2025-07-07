@@ -216,7 +216,7 @@
 
 .code-container {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 16px;
   margin-bottom: 16px;
 }
@@ -226,7 +226,6 @@
   border-radius: 12px;
   padding: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  flex: 1;
   text-align: center;
 }
 
@@ -239,9 +238,11 @@
   text-transform: uppercase;
 }
 
-.copy-code-btn {
-  min-width: 140px;
-  flex-shrink: 0;
+.code-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .invite-section {

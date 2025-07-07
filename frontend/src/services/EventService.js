@@ -30,7 +30,6 @@ const EventService = {
   
   async getMyEvents() {
     try {
-      // O backend já filtra eventos ativos e ordena por data por padrão
       const url = buildUrl(API_CONFIG.ENDPOINTS.MY_EVENTS);
       
       const response = await get(url);
@@ -54,7 +53,8 @@ const EventService = {
   
   async getAllMyEvents() {
     try {
-      const response = await get(API_CONFIG.ENDPOINTS.ALL_MY_EVENTS);
+      const url = buildUrl(API_CONFIG.ENDPOINTS.ALL_MY_EVENTS);
+      const response = await get(url);
       const data = await response.json();
       
       const events = (data.data || data || []).map(event => {
@@ -70,6 +70,8 @@ const EventService = {
       return { success: false, message: error.message, events: [] };
     }
   },
+
+
 
   
   async getEventDetails(eventId, forceFresh = false) {
@@ -93,7 +95,6 @@ const EventService = {
       
       let url = buildUrl(API_CONFIG.ENDPOINTS.EVENT_GET, { eventID: eventId });
       
-      // Add cache busting when forcing fresh data
       if (forceFresh) {
         url += (url.includes('?') ? '&' : '?') + `_t=${Date.now()}`;
       }
@@ -439,7 +440,8 @@ const EventService = {
   
   async generateEventCode(eventId) {
     try {
-      const response = await post(API_CONFIG.ENDPOINTS.EVENT_CODE_GENERATE, { eventId });
+      const url = buildUrl(API_CONFIG.ENDPOINTS.EVENT_CODE_GENERATE, { eventID: eventId });
+      const response = await get(url);
       const data = await response.json();
       
       if (data.success || response.ok) {

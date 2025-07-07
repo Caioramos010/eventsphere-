@@ -11,6 +11,7 @@ const EventInvite = () => {
   const navigate = useNavigate();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingCode, setLoadingCode] = useState(false);
   const [inviteUrl, setInviteUrl] = useState('');
   const [eventCode, setEventCode] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
@@ -21,21 +22,44 @@ const EventInvite = () => {
     const loadEventAndGenerateInvite = async () => {
       try {
         setLoading(true);
+        setError(''); // Limpar erros anteriores
+        
+        console.log('Carregando evento...', id);
         const eventResult = await EventService.getEventDetails(id);
         if (!eventResult.success) {
           setError(eventResult.message || 'Evento não encontrado');
           return;
         }
+        
+        console.log('Evento carregado:', eventResult.event);
         setEvent(eventResult.event);
         
+        // Gerar/obter o link de convite
+        console.log('Gerando link de convite...');
         const inviteResult = await EventService.generateInviteLink(id);
         if (inviteResult.success) {
+          console.log('Link gerado:', inviteResult.inviteUrl);
           setInviteUrl(inviteResult.inviteUrl);
-          
-          setEventCode(eventResult.event.inviteCode || '');
         } else {
           setError(inviteResult.message || 'Erro ao gerar link de convite');
+          return;
         }
+
+        // Gerar/obter o código do evento separadamente
+        console.log('Gerando código do evento...');
+        setLoadingCode(true);
+        const codeResult = await EventService.generateEventCode(id);
+        if (codeResult.success && codeResult.eventCode) {
+          console.log('Código gerado:', codeResult.eventCode);
+          setEventCode(codeResult.eventCode);
+        } else {
+          console.warn('Erro ao gerar código do evento:', codeResult.message);
+          // Se falhar, tenta usar o código que já existia no evento (fallback)
+          const fallbackCode = eventResult.event.inviteCode || eventResult.event.eventCode || '';
+          console.log('Usando código de fallback:', fallbackCode);
+          setEventCode(fallbackCode);
+        }
+        setLoadingCode(false);
       } catch (error) {
         console.error('Error loading event and invite:', error);
         setError('Erro ao carregar dados do evento');
@@ -133,7 +157,29 @@ const EventInvite = () => {
     }
     
     return timeString;
-  };  if (loading) {
+  };  const handleRegenerateCode = async () => {
+    try {
+      setLoadingCode(true);
+      setError('');
+      console.log('Regenerando código do evento...');
+      
+      const codeResult = await EventService.generateEventCode(id);
+      if (codeResult.success && codeResult.eventCode) {
+        console.log('Código regenerado:', codeResult.eventCode);
+        setEventCode(codeResult.eventCode);
+      } else {
+        console.error('Erro ao regenerar código:', codeResult.message);
+        setError('Erro ao regenerar código do evento');
+      }
+    } catch (error) {
+      console.error('Error regenerating code:', error);
+      setError('Erro ao regenerar código do evento');
+    } finally {
+      setLoadingCode(false);
+    }
+  };
+
+  if (loading) {
     return (
       <>
         <Header />
@@ -220,17 +266,33 @@ const EventInvite = () => {
                 </p>
                 <div className="code-container">
                   <div className="code-display">
-                    <span className="code-text">{eventCode}</span>
+                    <span className="code-text">
+                      {loadingCode ? 'Gerando código...' : (eventCode || 'Código não disponível')}
+                    </span>
                   </div>
-                  <StandardButton
-                    variant={copyCodeSuccess ? "success" : "secondary"}
-                    size="medium"
-                    icon={copyCodeSuccess ? IoCheckmarkOutline : IoCopyOutline}
-                    onClick={handleCopyCode}
-                    className="copy-code-btn"
-                  >
-                    {copyCodeSuccess ? 'Copiado!' : 'Copiar Código'}
-                  </StandardButton>
+                  <div className="code-actions">
+                    <StandardButton
+                      variant={copyCodeSuccess ? "success" : "secondary"}
+                      size="medium"
+                      icon={copyCodeSuccess ? IoCheckmarkOutline : IoCopyOutline}
+                      onClick={handleCopyCode}
+                      className="copy-code-btn"
+                      disabled={loadingCode || !eventCode}
+                    >
+                      {copyCodeSuccess ? 'Copiado!' : 'Copiar Código'}
+                    </StandardButton>
+                    {!eventCode && !loadingCode && (
+                      <StandardButton
+                        variant="primary"
+                        size="medium"
+                        icon={IoKeyOutline}
+                        onClick={handleRegenerateCode}
+                        className="regenerate-code-btn"
+                      >
+                        Gerar Código
+                      </StandardButton>
+                    )}
+                  </div>
                 </div>
               </div>
 

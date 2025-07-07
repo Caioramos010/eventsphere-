@@ -114,23 +114,10 @@ const Register = () => {
         
         const inviteToken = searchParams.get('token');
         if (inviteToken) {
-          setTimeout(async () => {
-            try {
-              const loginResult = await AuthService.login({
-                username: values.login,
-                password: values.senha
-              });
-              
-              if (loginResult.success) {
-                navigate(`/join-event/${inviteToken}`);
-              } else {
-                navigate(`/login?token=${inviteToken}`);
-              }
-            } catch (err) {
-              console.error('Auto-login error:', err);
-              navigate(`/login?token=${inviteToken}`);
-            }
-          }, 1000);
+          // Em vez de fazer login automático, redirecionar para login com token
+          setTimeout(() => {
+            navigate(`/login?token=${inviteToken}&registered=true`);
+          }, 1200);
         } else {
           setTimeout(() => navigate('/login'), 1200);
         }

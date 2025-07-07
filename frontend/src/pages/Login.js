@@ -34,6 +34,15 @@ const Login = () => {
       } else {
         navigate('/main');
       }
+    } else {
+      // Verificar se o usuário acabou de se registrar
+      const registered = searchParams.get('registered');
+      if (registered) {
+        setMessage({ 
+          text: 'Registro realizado com sucesso! Faça login para continuar.', 
+          type: 'success' 
+        });
+      }
     }
   }, [navigate, searchParams]);
   const handleSubmit = async (e) => {
@@ -57,14 +66,30 @@ const Login = () => {
       
       if (result.success) {
         // Aguardar um pouco para garantir que o token foi salvo
-        await new Promise(resolve => setTimeout(resolve, 100));
-        await loadUserProfile();
+        await new Promise(resolve => setTimeout(resolve, 200));
         
-        const inviteToken = searchParams.get('token');
-        if (inviteToken) {
-          navigate(`/join-event/${inviteToken}`);
-        } else {
-          navigate('/main');
+        // Carregar o perfil do usuário e aguardar
+        try {
+          await loadUserProfile();
+          
+          // Aguardar mais um pouco para garantir que o contexto foi atualizado
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          const inviteToken = searchParams.get('token');
+          if (inviteToken) {
+            navigate(`/join-event/${inviteToken}`);
+          } else {
+            navigate('/main');
+          }
+        } catch (profileError) {
+          console.error('Error loading profile:', profileError);
+          // Mesmo com erro no perfil, redirecionar
+          const inviteToken = searchParams.get('token');
+          if (inviteToken) {
+            navigate(`/join-event/${inviteToken}`);
+          } else {
+            navigate('/main');
+          }
         }
       } else {
         setMessage({ text: result.message || 'Login ou senha inválidos', type: 'error' });
