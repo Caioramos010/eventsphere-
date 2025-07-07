@@ -2,7 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { PageTitle, StandardButton, StandardCard, BackButton } from '../components';
+import { 
+  PageTitle, 
+  StandardButton, 
+  StandardCard, 
+  BackButton,
+  ImageModal,
+  QRModal,
+  ParticipantModal,
+  AttendanceModal
+} from '../components';
 import { 
   IoPeopleOutline, 
   IoPlayOutline, 
@@ -835,252 +844,43 @@ const EventDetails = () => {
             </StandardCard>
           )}</div>
       </div>
-      {showImageModal && event.photo && (
-        <div className="image-modal-overlay" onClick={() => setShowImageModal(false)}>
-          <div className="image-modal-container" onClick={(e) => e.stopPropagation()}>
-            <button className="image-modal-close" onClick={() => setShowImageModal(false)}>
-              <IoCloseOutline />
-            </button>
-            <img 
-              src={event.photo.startsWith('data:') ? event.photo : `data:image/jpeg;base64,${event.photo}`}
-              alt={event.name}
-              className="image-modal-img"
-            />
-            <div className="image-modal-caption">
-              <h3>{event.name}</h3>
-              <p>Imagem do evento</p>
-            </div>
-          </div>
-        </div>
-      )}
+      <ImageModal
+        isOpen={showImageModal}
+        onClose={() => setShowImageModal(false)}
+        imageUrl={event.photo ? (event.photo.startsWith('data:') ? event.photo : `data:image/jpeg;base64,${event.photo}`) : null}
+        title={event.name}
+        description="Imagem do evento"
+      />
       
-      {showParticipantModal && selectedParticipant && (
-        <div className="participant-modal-overlay" onClick={closeParticipantModal}>
-          <div className="participant-modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="participant-modal-header">
-              <h3>
-                Participante: {selectedParticipant.userName || selectedParticipant.userEmail}
-                {event.ownerId === selectedParticipant.userId && (
-                  <span className="owner-badge">Dono</span>
-                )}
-                {selectedParticipant.isCollaborator && event.ownerId !== selectedParticipant.userId && (
-                  <span className="collaborator-badge">Colaborador</span>
-                )}
-              </h3>
-              <button className="participant-modal-close" onClick={closeParticipantModal}>
-                <IoCloseOutline />
-              </button>
-            </div>
-            
-            <div className="participant-modal-content">
-              <div className="participant-modal-avatar">
-                <img src={
-                  selectedParticipant.userPhoto 
-                    ? (selectedParticipant.userPhoto.startsWith('data:') ? selectedParticipant.userPhoto : `data:image/jpeg;base64,${selectedParticipant.userPhoto}`)
-                    : userIcon
-                } alt="User" />
-              </div>
-              
-              <div className="participant-modal-info">
-                <div className="participant-modal-item">
-                  <strong>Email:</strong> {selectedParticipant.userEmail}
-                </div>
-                <div className="participant-modal-item">
-                  <strong>Status:</strong> {selectedParticipant.confirmed ? 'Confirmado' : 'Pendente'}
-                </div>
-                <div className="participant-modal-item">
-                  <strong>Colaborador:</strong> {selectedParticipant.isCollaborator ? 'Sim' : 'Não'}
-                </div>
-              </div>
-            </div>              <div className="participant-modal-actions">
-              {(event.state === 'CANCELED' || event.state === 'ACTIVE' || event.state === 'FINISHED') && (
-                <div className="modification-warning">
-                  <IoInformationCircleOutline className="warning-icon" />
-                  <span>
-                    {event.state === 'CANCELED' ? 'Evento cancelado - nenhuma ação disponível' :
-                     event.state === 'ACTIVE' ? 'Evento ativo - modificações não permitidas' :
-                     'Evento encerrado - modificações não permitidas'}
-                  </span>
-                </div>
-              )}
-              
-              {event.state === 'CREATED' && (
-                <>
-                  {!selectedParticipant.confirmed && (
-                    <button className="modern-btn" onClick={() => handleConfirmParticipant(selectedParticipant.userId)}>
-                      <IoCheckmarkOutline />
-                      <span>Confirmar Participação</span>
-                    </button>
-                  )}
-                  
-                  {!selectedParticipant.isCollaborator && event.userStatus === 'owner' && event.ownerId !== selectedParticipant.userId && (
-                    <button className="modern-btn" onClick={() => handlePromoteToCollaborator(selectedParticipant.userId)}>
-                      <IoPeopleOutline />
-                      <span>Promover a Colaborador</span>
-                    </button>
-                  )}
-                  
-                  {selectedParticipant.isCollaborator && event.userStatus === 'owner' && event.ownerId !== selectedParticipant.userId && (
-                    <button className="modern-btn" onClick={() => handleDemoteCollaborator(selectedParticipant.userId)}>
-                      <IoRemoveCircleOutline />
-                      <span>Remover como Colaborador</span>
-                    </button>
-                  )}
-                  
-                  {event.ownerId !== selectedParticipant.userId && (
-                    <button className="modern-btn remove-btn" onClick={() => handleRemoveParticipant(selectedParticipant.userId)}>
-                      <IoRemoveCircleOutline />
-                      <span>Remover Participante</span>
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>      )}
+      <ParticipantModal
+        isOpen={showParticipantModal}
+        onClose={closeParticipantModal}
+        participant={selectedParticipant}
+        event={event}
+        onConfirmParticipant={handleConfirmParticipant}
+        onPromoteToCollaborator={handlePromoteToCollaborator}
+        onDemoteCollaborator={handleDemoteCollaborator}
+        onRemoveParticipant={handleRemoveParticipant}
+      />
       
-      {showQrModal && qrCode && (
-        <div className="qr-modal-overlay" onClick={() => setShowQrModal(false)}>
-          <div className="qr-modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="qr-modal-header">
-              <h3>Seu QR Code de Presença</h3>
-              <button className="qr-modal-close" onClick={() => setShowQrModal(false)}>
-                <IoCloseOutline />
-              </button>
-            </div>
-            <div className="qr-modal-content">
-              <div className="qr-code-display">
-                <div className="qr-event-info">
-                  <strong>Evento:</strong> {event.name}
-                </div>
-                {qrCode.qrCodeImage && (
-                  <div className="qr-code-image">
-                    <img 
-                      src={`data:image/png;base64,${qrCode.qrCodeImage}`} 
-                      alt="QR Code de Presença" 
-                      className="qr-image"
-                    />
-                  </div>
-                )}
-                <p>Mostre este código para o organizador marcar sua presença</p>
-                {qrCode.qrCodeText && (
-                  <div className="qr-code-text-info">
-                    <small>Código: {qrCode.qrCodeText}</small>
-                    <button
-                      className="copy-btn"
-                      onClick={async () => {
-                        await navigator.clipboard.writeText(qrCode.qrCodeText);
-                        dialog.alert('Código copiado para a área de transferência!');
-                      }}
-                      title="Copiar código"
-                    >
-                      <IoCopyOutline />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <QRModal
+        isOpen={showQrModal}
+        onClose={() => setShowQrModal(false)}
+        qrCodeData={qrCode}
+        eventName={event.name}
+        onCopyCode={dialog.alert}
+      />
       
-      {showAttendanceReport && attendanceReport && (
-        <div className="attendance-modal-overlay" onClick={() => setShowAttendanceReport(false)}>
-          <div className="attendance-modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="attendance-modal-header">
-              <h3>Relatório de Presença</h3>
-              <button className="attendance-modal-close" onClick={() => setShowAttendanceReport(false)}>
-                <IoCloseOutline />
-              </button>
-            </div>
-            <div className="attendance-modal-content">
-              <div className="attendance-summary">
-                <h4>{attendanceReport.eventName}</h4>
-                <div className="attendance-stats" style={{position: 'relative'}}>
-                  <div className="stat-item">
-                    <span className="stat-number">{attendanceReport.totalParticipants}</span>
-                    <span className="stat-label">Total de Participantes</span>
-                  </div>
-                  <div className="stat-item present">
-                    <span className="stat-number">{attendanceReport.presentCount}</span>
-                    <span className="stat-label">Presentes</span>
-                  </div>
-                  <div className="stat-item absent">
-                    <span className="stat-number">{attendanceReport.absentCount}</span>
-                    <span className="stat-label">Ausentes</span>
-                  </div>
-                </div>
-                  <button className="modern-btn-secondary small-btn print-btn-stats" onClick={() => setShowPrintPage(true)}>
-                    <IoPrintOutline />
-                    <span>Imprimir Lista completa</span>
-                  </button>
-              </div>
-              
-              <div className="attendance-lists">
-                <div className="attendance-list present-list">
-                  <h5>Participantes Presentes ({attendanceReport.presentCount})</h5>
-                  {attendanceReport.presentParticipants.map(participant => (
-                    <div key={participant.id} className="attendance-participant present">
-                      <div className="participant-avatar">
-                        <img src={
-                          participant.userPhoto 
-                            ? (participant.userPhoto.startsWith('data:') ? participant.userPhoto : `data:image/jpeg;base64,${participant.userPhoto}`)
-                            : userIcon
-                        } alt="User" />
-                      </div>
-                      <div className="participant-info">
-                        <div className="participant-name">
-                          {participant.userName}
-                          {event.ownerId === participant.userId && (
-                            <span className="owner-badge">Dono</span>
-                          )}
-                          {participant.isCollaborator && event.ownerId !== participant.userId && (
-                            <span className="collaborator-badge">Colaborador</span>
-                          )}
-                        </div>
-                        <div className="participant-email">{participant.userEmail}</div>
-                      </div>
-                      <div className="presence-status present">
-                        <IoCheckmarkCircleOutline />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="attendance-list absent-list">
-                  <h5>Participantes Ausentes ({attendanceReport.absentCount})</h5>
-                  {attendanceReport.absentParticipants.map(participant => (
-                    <div key={participant.id} className="attendance-participant absent">
-                      <div className="participant-avatar">
-                        <img src={
-                          participant.userPhoto 
-                            ? (participant.userPhoto.startsWith('data:') ? participant.userPhoto : `data:image/jpeg;base64,${participant.userPhoto}`)
-                            : userIcon
-                        } alt="User" />
-                      </div>
-                      <div className="participant-info">
-                        <div className="participant-name">
-                          {participant.userName}
-                          {event.ownerId === participant.userId && (
-                            <span className="owner-badge">Dono</span>
-                          )}
-                          {participant.isCollaborator && event.ownerId !== participant.userId && (
-                            <span className="collaborator-badge">Colaborador</span>
-                          )}
-                        </div>
-                        <div className="participant-email">{participant.userEmail}</div>
-                      </div>
-                      <div className="presence-status absent">
-                        <IoCloseCircleOutline />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <AttendanceModal
+        isOpen={showAttendanceReport}
+        onClose={() => setShowAttendanceReport(false)}
+        attendanceReport={attendanceReport ? {
+          eventName: attendanceReport.eventName,
+          presentList: attendanceReport.presentParticipants,
+          absentList: attendanceReport.absentParticipants
+        } : null}
+        onPrintReport={() => setShowPrintPage(true)}
+      />
       
       <Footer />
     </>
