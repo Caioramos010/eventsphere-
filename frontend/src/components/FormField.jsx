@@ -2,10 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import '../styles/shared.css';
 
-/**
- * FormField Component
- * Reusable form field with label, input, error message, and hint
- */
 const FormField = ({
   label,
   name,
@@ -18,9 +14,9 @@ const FormField = ({
   error = '',
   hint = '',
   className = '',
-  options = [], // For select fields
-  rows = 4, // For textarea
-  accept = '', // For file inputs
+  options = [], 
+  rows = 4, 
+  accept = '', 
   min,
   max,
   step,
