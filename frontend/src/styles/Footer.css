@@ -45,7 +45,6 @@ html, body {
   height: auto;
 }
 .main-footer-right {
-  flex: 1;
   display: flex;
   justify-content: flex-end;
   gap: 16px;

@@ -10,7 +10,7 @@ export const useFormState = (initialState = {}, validators = {}) => {
   const updateField = useCallback((name, value) => {
     setForm(prev => ({ ...prev, [name]: value }));
     
-    // Clear error for this field when user starts typing
+    
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
     }
@@ -55,7 +55,7 @@ export const useFormState = (initialState = {}, validators = {}) => {
           if (errorMessage) {
             newErrors[fieldName] = errorMessage;
             isValid = false;
-            break; // Stop at first error for this field
+            break; 
           }
         }
       }
@@ -103,7 +103,7 @@ export const useFormState = (initialState = {}, validators = {}) => {
     }
   }, [form, resetMessages, showError, showSuccess]);
 
-  // Check if form is valid (used for enabling/disabling submit buttons)
+  
   const isValidValue = useMemo(() => {
     if (!validators || Object.keys(validators).length === 0) {
       return true;
@@ -126,7 +126,7 @@ export const useFormState = (initialState = {}, validators = {}) => {
   }, [form, validators]);
 
   return {
-    // Form state (for backward compatibility)
+    
     form,
     setForm,
     updateField,
@@ -134,27 +134,27 @@ export const useFormState = (initialState = {}, validators = {}) => {
     resetForm,
     handleChange,
     
-    // New API for Login/Register components
+    
     values: form,
     errors,
     validate,
     isValid: isValidValue,
     
-    // Loading state
+    
     loading,
     setLoading,
     
-    // Message state
+    
     error,
     success,
     showError,
     showSuccess,
     resetMessages,
     
-    // Submit handler
+    
     handleSubmit,
     
-    // For CreateEvent/EditEvent compatibility
+    
     setFormError: showError,
     setFormSuccess: showSuccess,
     setFormLoading: setLoading,
@@ -179,15 +179,15 @@ export const useFileUpload = () => {
     setError('');
 
     if (selectedFile) {
-      // Validate file type
+      
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
       if (!validTypes.includes(selectedFile.type)) {
         setError('Tipo de arquivo não suportado. Use JPEG, PNG ou GIF.');
         return;
       }
 
-      // Validate file size (5MB max)
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      
+      const maxSize = 5 * 1024 * 1024; 
       if (selectedFile.size > maxSize) {
         setError('Arquivo muito grande. Tamanho máximo: 5MB.');
         return;
@@ -195,7 +195,7 @@ export const useFileUpload = () => {
 
       setFile(selectedFile);
 
-      // Create preview
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result);

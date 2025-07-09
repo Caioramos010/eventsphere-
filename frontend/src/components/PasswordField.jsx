@@ -3,10 +3,7 @@ import PropTypes from 'prop-types';
 import { IoEyeOutline, IoEyeOffOutline } from 'react-icons/io5';
 import '../styles/shared.css';
 
-/**
- * PasswordField Component
- * FormField especializado para senhas com toggle de visibilidade e validação
- */
+
 const PasswordField = ({
   label = 'SENHA',
   name,
@@ -32,7 +29,7 @@ const PasswordField = ({
     setShowPassword(!showPassword);
   };
 
-  // Validações em tempo real para mostrar requisitos
+  
   const requirements = showRequirements ? {
     length: value.length >= 8,
     uppercase: /[A-Z]/.test(value),

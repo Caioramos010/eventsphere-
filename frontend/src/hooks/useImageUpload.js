@@ -11,13 +11,13 @@ export const useImageUpload = (maxSize = 5 * 1024 * 1024, onSuccess, onError) =>
     
     if (!selectedFile) return;
 
-    // Validate file type
+    
     if (!selectedFile.type.startsWith('image/')) {
       onError?.('Por favor, selecione apenas arquivos de imagem');
       return;
     }
 
-    // Validate file size
+    
     if (selectedFile.size > maxSize) {
       onError?.(`A imagem deve ter no máximo ${Math.round(maxSize / (1024 * 1024))}MB`);
       return;
@@ -25,14 +25,14 @@ export const useImageUpload = (maxSize = 5 * 1024 * 1024, onSuccess, onError) =>
 
     setFile(selectedFile);
 
-    // Create preview
+    
     const reader = new FileReader();
     reader.onload = (e) => {
       setPreview(e.target.result);
     };
     reader.readAsDataURL(selectedFile);
 
-    // Clear any previous errors
+    
     onError?.('');
   }, [maxSize, onError]);
 

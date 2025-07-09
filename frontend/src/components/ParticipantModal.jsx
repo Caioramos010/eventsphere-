@@ -76,7 +76,6 @@ const ParticipantModal = ({
       className={className}
     >
       <div style={{ textAlign: 'center' }}>
-        {/* Avatar */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'center', 
@@ -100,7 +99,6 @@ const ParticipantModal = ({
           />
         </div>
         
-        {/* Info */}
         <div style={{ 
           color: 'var(--color-text-white)',
           marginBottom: '30px' 
@@ -111,7 +109,6 @@ const ParticipantModal = ({
           <div style={{ marginBottom: '15px' }}>
             <strong>Status:</strong> {participant.confirmed ? 'Confirmado' : 'Pendente'}
           </div>
-          {/* Status Badge */}
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -139,7 +136,6 @@ const ParticipantModal = ({
           </div>
         </div>
         
-        {/* Actions */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',

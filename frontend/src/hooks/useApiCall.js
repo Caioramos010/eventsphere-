@@ -1,12 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { handleServiceError } from '../utils/errorHandler';
 
-/**
- * Custom hook for handling API calls with loading, error, and success states
- * @param {Function} apiFunction - The API function to call
- * @param {Object} options - Configuration options
- * @returns {Object} API state and actions
- */
 export const useApiCall = (apiFunction, options = {}) => {
   const {
     immediate = false,

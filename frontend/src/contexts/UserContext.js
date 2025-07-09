@@ -14,11 +14,11 @@ export const useUser = () => {
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // loading começa como true
+  const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null);
 
   const loadUserProfile = async () => {
-    setLoading(true); // sempre começa carregando
+    setLoading(true); 
     setError(null);
     const currentUser = AuthService.getCurrentUser();
     if (!currentUser) {
@@ -39,7 +39,7 @@ export const UserProvider = ({ children }) => {
       setUser(null);
       if (err.message && (err.message.includes('Não autorizado') || err.message.includes('Token expired'))) {
         AuthService.logout();
-        // Se token expirou durante login, não redirecionar automaticamente
+        
         if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login';
         }

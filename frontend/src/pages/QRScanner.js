@@ -1,35 +1,124 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+
+
+import { Html5Qrcode } from 'html5-qrcode';
+
+
+import { 
+  IoQrCodeOutline, 
+  IoCheckmarkCircleOutline, 
+  IoCloseCircleOutline, 
+  IoFlashOutline, 
+  IoFlashOffOutline, 
+  IoCameraReverseOutline 
+} from 'react-icons/io5';
+
+
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageTitle from '../components/PageTitle';
 import { BackButton, LoadingSpinner, Message } from '../components';
-import { IoQrCodeOutline, IoCheckmarkCircleOutline, IoCloseCircleOutline, IoFlashOutline, IoFlashOffOutline, IoCameraReverseOutline } from 'react-icons/io5';
-import { Html5Qrcode } from 'html5-qrcode';
+
+
 import { buildUrl } from '../config/api';
 import API_CONFIG from '../config/api';
 import ParticipantService from '../services/ParticipantService';
+
+
 import { useDialog } from '../contexts/DialogContext';
+
+
 import '../styles/QRScanner.css';
 
+
+
+
+
+const SCANNER_CONFIG = {
+  DEFAULT_FPS: 10,
+  FALLBACK_FPS: 5,
+  QR_BOX_SIZE: { width: 250, height: 250 },
+  FALLBACK_QR_BOX_SIZE: { width: 200, height: 200 },
+  CAMERA_HEIGHT: '300px',
+  TOKEN_LENGTH: 6,
+  SCAN_PAUSE_DURATION: 3000,
+  SUCCESS_DISPLAY_DURATION: 5000
+};
+
+const CAMERA_STYLES = `
+  #reader {
+    position: relative !important;
+    min-height: 300px !important;
+    border: 1px solid #ccc !important;
+  }
+  #reader video {
+    height: 300px !important;
+    object-fit: cover !important;
+    border-radius: 12px !important;
+  }
+  #reader__scan_region {
+    min-height: 200px !important;
+  }
+  #reader__dashboard {
+    background: #f8f8f8 !important;
+    padding: 5px !important;
+  }
+  #reader__dashboard_section_csr button {
+    background: #2563eb !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 8px 16px !important;
+  }
+  #reader__dashboard_section_swaplink {
+    color: #2563eb !important;
+  }
+  #reader__status_span {
+    color: #333 !important;
+    font-size: 14px !important;
+  }
+`;
+
+
+
+
+
 const QRScanner = () => {
+  
   const { id } = useParams();
   const navigate = useNavigate();
-  const scannerContainerRef = useRef(null);
-  const html5QrCodeRef = useRef(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [hasCamera, setHasCamera] = useState(false);
-  const [flashEnabled, setFlashEnabled] = useState(false);
-  const [facingMode, setFacingMode] = useState('environment'); 
-  const [scanResult, setScanResult] = useState(null);
-  const [error, setError] = useState(null);
-  const [event, setEvent] = useState(null);
-  const [scannedParticipants, setScannedParticipants] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [availableCameras, setAvailableCameras] = useState([]);
-  const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
   const dialog = useDialog();
 
   
+  const scannerContainerRef = useRef(null);
+  const html5QrCodeRef = useRef(null);
+
+  
+  const [isScanning, setIsScanning] = useState(false);
+  const [hasCamera, setHasCamera] = useState(false);
+  const [flashEnabled, setFlashEnabled] = useState(false);
+  const [facingMode, setFacingMode] = useState('environment');
+  const [availableCameras, setAvailableCameras] = useState([]);
+  const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
+
+  
+  const [event, setEvent] = useState(null);
+  const [scannedParticipants, setScannedParticipants] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  
+  const [scanResult, setScanResult] = useState(null);
+  const [error, setError] = useState(null);
+
+  
+  
+  
+
+  /**
+   * Cleanup scanner resources when component unmounts
+   */
   const cleanup = useCallback(() => {
     if (html5QrCodeRef.current) {
       html5QrCodeRef.current.stop().catch(err => {
@@ -40,7 +129,9 @@ const QRScanner = () => {
     setIsScanning(false);
   }, []);
 
-  
+  /**
+   * Load event data from API
+   */
   const loadEventData = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -65,7 +156,9 @@ const QRScanner = () => {
     }
   }, [id]);
 
-  
+  /**
+   * Load list of already scanned participants
+   */
   const loadScannedParticipants = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -87,6 +180,11 @@ const QRScanner = () => {
   }, [id]);
   
   
+  
+
+  /**
+   * Initialize data loading and cleanup on mount
+   */
   useEffect(() => {
     loadEventData();
     loadScannedParticipants();
@@ -96,45 +194,15 @@ const QRScanner = () => {
     };
   }, [id, loadEventData, loadScannedParticipants, cleanup]);
 
-  
+  /**
+   * Initialize camera and apply custom styles
+   */
   useEffect(() => {
     initializeCamera();
     
     
     const style = document.createElement('style');
-    style.innerHTML = `
-      #reader {
-        position: relative !important;
-        min-height: 300px !important;
-        border: 1px solid #ccc !important;
-      }
-      #reader video {
-        height: 300px !important;
-        object-fit: cover !important;
-        border-radius: 12px !important;
-      }
-      #reader__scan_region {
-        min-height: 200px !important;
-      }
-      #reader__dashboard {
-        background: #f8f8f8 !important;
-        padding: 5px !important;
-      }
-      #reader__dashboard_section_csr button {
-        background: #2563eb !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 4px !important;
-        padding: 8px 16px !important;
-      }
-      #reader__dashboard_section_swaplink {
-        color: #2563eb !important;
-      }
-      #reader__status_span {
-        color: #333 !important;
-        font-size: 14px !important;
-      }
-    `;
+    style.innerHTML = CAMERA_STYLES;
     document.head.appendChild(style);
     
     return () => {
@@ -145,6 +213,12 @@ const QRScanner = () => {
   }, []);
 
   
+  
+  
+
+  /**
+   * Check browser compatibility and available cameras
+   */
   const initializeCamera = async () => {
     try {
       
@@ -191,6 +265,12 @@ const QRScanner = () => {
   };
 
   
+  
+  
+
+  /**
+   * Start the QR code scanner
+   */
   const startScanner = async () => {
     try {
       setError(null);
@@ -212,29 +292,27 @@ const QRScanner = () => {
       
       readerElement.style.display = 'block';
       readerElement.style.width = '100%';
-      readerElement.style.height = '300px';
-      readerElement.style.minHeight = '300px';
-      readerElement.style.maxHeight = '300px';
+      readerElement.style.height = SCANNER_CONFIG.CAMERA_HEIGHT;
+      readerElement.style.minHeight = SCANNER_CONFIG.CAMERA_HEIGHT;
+      readerElement.style.maxHeight = SCANNER_CONFIG.CAMERA_HEIGHT;
 
       
       html5QrCodeRef.current = new Html5Qrcode("reader");
 
       
       const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
+        fps: SCANNER_CONFIG.DEFAULT_FPS,
+        qrbox: SCANNER_CONFIG.QR_BOX_SIZE,
         aspectRatio: 1.0,
         disableFlip: false,
         formatsToSupport: undefined
       };
 
+      
       let cameraId;
-      
-      
       if (availableCameras.length > 0 && currentCameraIndex >= 0 && currentCameraIndex < availableCameras.length) {
         cameraId = availableCameras[currentCameraIndex].deviceId;
       } else {
-        
         cameraId = { facingMode };
       }
 
@@ -248,44 +326,81 @@ const QRScanner = () => {
 
       setIsScanning(true);
     } catch (err) {
-      let errorMessage = 'Erro ao acessar a câmera.';
+      handleStartScannerError(err);
+    }
+  };
+
+  /**
+   * Handle scanner startup errors with fallback options
+   */
+  const handleStartScannerError = async (err) => {
+    let errorMessage = 'Erro ao acessar a câmera.';
+    
+    if (err.name === 'NotAllowedError') {
+      errorMessage = 'Permissão de câmera negada. Permita o acesso nas configurações do navegador.';
+    } else if (err.name === 'NotFoundError') {
+      errorMessage = 'Nenhuma câmera encontrada neste dispositivo.';
+    } else if (err.name === 'NotReadableError') {
+      errorMessage = 'Câmera está sendo usada por outro aplicativo.';
+    } else if (err.name === 'OverconstrainedError') {
+      errorMessage = 'Configurações de câmera não suportadas. Tentando configuração básica...';
       
-      if (err.name === 'NotAllowedError') {
-        errorMessage = 'Permissão de câmera negada. Permita o acesso nas configurações do navegador.';
-      } else if (err.name === 'NotFoundError') {
-        errorMessage = 'Nenhuma câmera encontrada neste dispositivo.';
-      } else if (err.name === 'NotReadableError') {
-        errorMessage = 'Câmera está sendo usada por outro aplicativo.';
-      } else if (err.name === 'OverconstrainedError') {
-        errorMessage = 'Configurações de câmera não suportadas. Tentando configuração básica...';
-        
-        
-        try {
-          html5QrCodeRef.current = new Html5Qrcode("reader");
-          await html5QrCodeRef.current.start(
-            { facingMode: 'environment' },
-            {
-              fps: 5,
-              qrbox: { width: 200, height: 200 }
-            },
-            handleScanSuccess,
-            handleScanError
-          );
-          setIsScanning(true);
-          return;
-        } catch (simpleError) {
-          errorMessage = `Erro mesmo com configuração básica: ${simpleError.message}`;
-        }
-      } else if (err.message) {
-        errorMessage = `Erro: ${err.message}`;
+      
+      try {
+        html5QrCodeRef.current = new Html5Qrcode("reader");
+        await html5QrCodeRef.current.start(
+          { facingMode: 'environment' },
+          {
+            fps: SCANNER_CONFIG.FALLBACK_FPS,
+            qrbox: SCANNER_CONFIG.FALLBACK_QR_BOX_SIZE
+          },
+          handleScanSuccess,
+          handleScanError
+        );
+        setIsScanning(true);
+        return;
+      } catch (simpleError) {
+        errorMessage = `Erro mesmo com configuração básica: ${simpleError.message}`;
       }
-      
-      setError(errorMessage);
+    } else if (err.message) {
+      errorMessage = `Erro: ${err.message}`;
+    }
+    
+    setError(errorMessage);
+    setIsScanning(false);
+  };
+
+  /**
+   * Stop the QR code scanner
+   */
+  const stopScanner = () => {
+    if (html5QrCodeRef.current && isScanning) {
+      html5QrCodeRef.current.stop().then(() => {
+        setIsScanning(false);
+        html5QrCodeRef.current = null;
+        
+        
+        const readerElement = document.getElementById('reader');
+        if (readerElement) {
+          readerElement.style.display = 'none';
+        }
+      }).catch(err => {
+        
+        html5QrCodeRef.current = null;
+        setIsScanning(false);
+      });
+    } else {
       setIsScanning(false);
     }
   };
 
   
+  
+  
+
+  /**
+   * Handle QR scan errors (filter out common false positives)
+   */
   const handleScanError = (error) => {
     
     if (
@@ -304,7 +419,9 @@ const QRScanner = () => {
     }
   };
 
-  
+  /**
+   * Handle successful QR scan
+   */
   const handleScanSuccess = async (decodedText, decodedResult) => {
     try {
       
@@ -313,29 +430,9 @@ const QRScanner = () => {
       }
       
       
-      let token = decodedText.trim();
-      
-      
-      token = token.replace(/\D/g, '');
-      
-      
-      if (token.length > 6) {
-        token = token.slice(-6);
-      }
-      
-      
-      if (!/^\d{6}$/.test(token)) {
-        dialog.alert('QR Code inválido. Esperado um token de 6 dígitos.');
-        setScanResult({ success: false, message: 'QR Code inválido' });
-        
-        
-        setTimeout(() => {
-          if (html5QrCodeRef.current && isScanning) {
-            html5QrCodeRef.current.resume();
-          }
-          setScanResult(null);
-        }, 3000);
-        return;
+      const token = cleanAndValidateToken(decodedText);
+      if (!token) {
+        return; 
       }
       
       
@@ -347,26 +444,66 @@ const QRScanner = () => {
           html5QrCodeRef.current.resume();
         }
         setScanResult(null);
-      }, 5000);
+      }, SCANNER_CONFIG.SUCCESS_DISPLAY_DURATION);
       
     } catch (err) {
-      
-      if (err.isParticipantAlreadyPresent || (err.message && err.message.includes('já está presente'))) {
-        dialog.alert('Participante já está presente');
-      } else {
-        dialog.alert('Erro ao processar QR code');
-      }
+      handleScanProcessingError(err);
+    }
+  };
+
+  /**
+   * Clean and validate scanned token
+   */
+  const cleanAndValidateToken = (decodedText) => {
+    let token = decodedText.trim();
+    
+    
+    token = token.replace(/\D/g, '');
+    
+    
+    if (token.length > SCANNER_CONFIG.TOKEN_LENGTH) {
+      token = token.slice(-SCANNER_CONFIG.TOKEN_LENGTH);
+    }
+    
+    
+    if (!/^\d{6}$/.test(token)) {
+      dialog.alert('QR Code inválido. Esperado um token de 6 dígitos.');
+      setScanResult({ success: false, message: 'QR Code inválido' });
       
       
       setTimeout(() => {
         if (html5QrCodeRef.current && isScanning) {
           html5QrCodeRef.current.resume();
         }
-      }, 3000);
+        setScanResult(null);
+      }, SCANNER_CONFIG.SCAN_PAUSE_DURATION);
+      return null;
     }
+    
+    return token;
   };
 
-  
+  /**
+   * Handle errors during scan processing
+   */
+  const handleScanProcessingError = (err) => {
+    if (err.isParticipantAlreadyPresent || (err.message && err.message.includes('já está presente'))) {
+      dialog.alert('Participante já está presente');
+    } else {
+      dialog.alert('Erro ao processar QR code');
+    }
+    
+    
+    setTimeout(() => {
+      if (html5QrCodeRef.current && isScanning) {
+        html5QrCodeRef.current.resume();
+      }
+    }, SCANNER_CONFIG.SCAN_PAUSE_DURATION);
+  };
+
+  /**
+   * Mark participant presence via API
+   */
   const markPresence = async (token) => {
     try {
       
@@ -380,7 +517,6 @@ const QRScanner = () => {
       const result = await ParticipantService.markPresenceByToken(token);
       
       if (result.success) {
-        
         const participant = result.data;
         const newParticipant = {
           id: participant.id,
@@ -405,12 +541,10 @@ const QRScanner = () => {
         setScanResult({ success: false, message: result.message || 'Erro ao marcar presença' });
       }
     } catch (err) {
-      
       if (err.isParticipantAlreadyPresent || (err.message && err.message.includes('já está presente'))) {
         dialog.alert('Participante já está presente');
         setScanResult({ success: false, message: 'Participante já está presente' });
       } else {
-        
         dialog.alert('Erro ao marcar presença');
         setScanResult({ success: false, message: 'Erro ao marcar presença' });
       }
@@ -418,28 +552,12 @@ const QRScanner = () => {
   };
 
   
-  const stopScanner = () => {
-    if (html5QrCodeRef.current && isScanning) {
-      html5QrCodeRef.current.stop().then(() => {
-        setIsScanning(false);
-        html5QrCodeRef.current = null;
-        
-        
-        const readerElement = document.getElementById('reader');
-        if (readerElement) {
-          readerElement.style.display = 'none';
-        }
-      }).catch(err => {
-        
-        html5QrCodeRef.current = null;
-        setIsScanning(false);
-      });
-    } else {
-      setIsScanning(false);
-    }
-  };
-
   
+  
+
+  /**
+   * Toggle camera flash on/off
+   */
   const toggleFlash = async () => {
     if (html5QrCodeRef.current && isScanning) {
       try {
@@ -455,7 +573,9 @@ const QRScanner = () => {
     }
   };
 
-  
+  /**
+   * Switch between available cameras
+   */
   const switchCamera = async () => {
     if (availableCameras.length <= 1) {
       setError('Apenas uma câmera disponível');
@@ -491,34 +611,32 @@ const QRScanner = () => {
   };
 
   
+  
+  
+
+  /**
+   * Handle manual token input
+   */
   const handleManualInput = async () => {
     const tokenInput = await dialog.prompt('Digite o token de 6 dígitos:', { label: 'Token', type: 'text' });
     if (tokenInput && tokenInput.trim()) {
-      
-      let cleanToken = tokenInput.trim();
-      
-      
-      cleanToken = cleanToken.replace(/\D/g, '');
-      
-      
-      if (cleanToken.length > 6) {
-        cleanToken = cleanToken.slice(-6);
+      const cleanToken = cleanAndValidateToken(tokenInput);
+      if (cleanToken) {
+        await markPresence(cleanToken);
       }
-      
-      
-      if (!/^\d{6}$/.test(cleanToken)) {
-        dialog.alert('Token deve conter exatamente 6 dígitos');
-        return;
-      }
-      
-      
-      await markPresence(cleanToken);
     }
   };
 
+  /**
+   * Navigate back to event details
+   */
   const handleBack = () => {
     navigate(`/event/${id}`);
   };
+
+  
+  
+  
 
   if (isLoading) {
     return (
@@ -542,7 +660,7 @@ const QRScanner = () => {
             title="Evento não encontrado" 
             message="Não foi possível carregar os dados do evento."
             actionText="Voltar"
-            onAction={() => navigate('/events')}
+            onAction={() => navigate('/main')}
           />
         </div>
         <Footer />
@@ -555,17 +673,12 @@ const QRScanner = () => {
       <Header />
       <div className="qr-scanner-container">
         <div className="qr-scanner-main">
-          <div className="scanner-header">
             <BackButton onClick={handleBack} />
-            <div className="scanner-title">
-              <IoQrCodeOutline className="scanner-icon" />
-              <div>
-                <h1>ESCANEAR QR CODE</h1>
-                <span>NA TELA</span>
-              </div>
-            </div>
-          </div>
-
+            <PageTitle
+              icon={IoQrCodeOutline}
+              title="Escanear QR Code"
+              subtitle="Escaneie o QR Code do participante"
+            />
           <div className="event-info-banner">
             <h2>{event.title || event.name}</h2>
             <p>{event.location || event.localization || 'Local não informado'}</p>
